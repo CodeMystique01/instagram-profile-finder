@@ -250,6 +250,39 @@
             letter-spacing: 0.5px;
         }
 
+        .stats-summary {
+            margin-top: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            gap: 12px;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.15);
+            padding-bottom: 10px;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .summary-label {
+            font-weight: 600;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+            color: #4a4a4a;
+        }
+
         .error {
             display: none;
             background: #fee;
@@ -335,7 +368,7 @@
         <div class="result" id="result">
             <!-- Instagram Profile Section -->
             <div class="profile-section">
-                <img id="profilePic" class="profile-pic" src="" alt="Profile Picture">
+                <img id="profilePic" class="profile-pic" src="" alt="Profile Picture" referrerpolicy="no-referrer">
                 <div class="profile-info">
                     <h3 id="fullName"></h3>
                     <div class="username">@<span id="username"></span></div>
@@ -362,6 +395,21 @@
                     <div class="stat">
                         <div class="stat-value" id="inactiveAds">0</div>
                         <div class="stat-label">Inactive Ads</div>
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Ads</span>
+                        <span class="summary-value" id="totalAdsText">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Active Ads</span>
+                        <span class="summary-value" id="activeAdsText">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Inactive Ads</span>
+                        <span class="summary-value" id="inactiveAdsText">0</span>
                     </div>
                 </div>
 
@@ -578,8 +626,12 @@ Return ONLY the brand name, nothing else. No explanations.`;
                 brand: brandName
             });
             
-            // Display Instagram profile
-            document.getElementById('profilePic').src = instagramData.profile_pic_url_hd || instagramData.profile_pic_url || 'https://via.placeholder.com/80';
+            const profilePicElement = document.getElementById('profilePic');
+            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&size=150&background=667eea&color=fff`;
+            profilePicElement.onerror = () => {
+                profilePicElement.src = fallbackAvatar;
+            };
+            profilePicElement.src = instagramData.profile_pic_url_hd || instagramData.profile_pic_url || fallbackAvatar;
             document.getElementById('fullName').textContent = instagramData.full_name || username;
             document.getElementById('username').textContent = instagramData.username;
             
@@ -599,6 +651,9 @@ Return ONLY the brand name, nothing else. No explanations.`;
             document.getElementById('totalAds').textContent = formatNumber(totalAds);
             document.getElementById('activeAds').textContent = formatNumber(activeAds);
             document.getElementById('inactiveAds').textContent = formatNumber(inactiveAds);
+            document.getElementById('totalAdsText').textContent = formatNumber(totalAds);
+            document.getElementById('activeAdsText').textContent = formatNumber(activeAds);
+            document.getElementById('inactiveAdsText').textContent = formatNumber(inactiveAds);
             
             // Debug: confirm values rendered
             console.log('✅ Rendered Total Ads text:', document.getElementById('totalAds').textContent);
