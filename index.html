@@ -599,6 +599,11 @@ Return ONLY the brand name, nothing else. No explanations.`;
             document.getElementById('totalAds').textContent = formatNumber(totalAds);
             document.getElementById('activeAds').textContent = formatNumber(activeAds);
             document.getElementById('inactiveAds').textContent = formatNumber(inactiveAds);
+            
+            // Debug: confirm values rendered
+            console.log('✅ Rendered Total Ads text:', document.getElementById('totalAds').textContent);
+            console.log('✅ Rendered Active Ads text:', document.getElementById('activeAds').textContent);
+            console.log('✅ Rendered Inactive Ads text:', document.getElementById('inactiveAds').textContent);
 
             // Show result
             document.getElementById('result').classList.add('active');
