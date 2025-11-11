@@ -3,7 +3,7 @@
 
 const http = require('http');
 const url = require('url');
-const instagramAPI = require('./api/instagram');
+const instagramAPI = require('./api/instagram-v2');
 
 const PORT = 3000;
 
@@ -20,7 +20,7 @@ const server = http.createServer(async (req, res) => {
   }
   
   // Handle API request
-  if (parsedUrl.pathname === '/api/instagram') {
+  if (parsedUrl.pathname === '/api/instagram' || parsedUrl.pathname === '/api/instagram-v2') {
     const mockReq = {
       method: req.method,
       query: parsedUrl.query

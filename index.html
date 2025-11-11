@@ -482,8 +482,8 @@
                 let usingBackupMethod = false;
                 
                 try {
-                    // Method 1: Try our secure backend API
-                    const response = await fetch(`/api/instagram?username=${cleanUsername}`);
+                    // Method 1: Try Instagram direct scraping (no API key needed)
+                    const response = await fetch(`/api/instagram-hybrid?username=${cleanUsername}`);
 
                     if (response.ok) {
                         data = await response.json();
