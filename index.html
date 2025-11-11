@@ -347,7 +347,7 @@
             <div class="ads-section">
                 <div class="ads-header">
                     <h2>📊 Advertising Statistics</h2>
-                    <p>Brand: <strong id="brandName"></strong> <span style="font-size: 0.9rem; color: #667eea;">(AI-extracted)</span></p>
+                    <p>Brand: <strong id="brandName"></strong></p>
                 </div>
 
                 <div class="stats-grid">
@@ -366,7 +366,7 @@
                 </div>
 
                 <div class="info">
-                    🤖 Brand name extracted by <strong>Gemini AI</strong> • 📊 Ad data from <strong>BrandBooster API</strong>
+                    🤖 Powered by <strong>Gemini AI</strong> • 📊 Ad data from <strong>BrandBooster API</strong> • 📱 Profile from <strong>Instagram</strong>
                 </div>
             </div>
         </div>
@@ -413,25 +413,53 @@
                     throw new Error('Could not fetch Instagram profile');
                 }
 
-                // Step 2: Use Gemini AI to extract clean brand name from profile
+                // Step 2: Get full profile name for ad search
                 const profileName = instagramData.full_name || username;
                 console.log('✅ Step 2: Instagram profile name:', profileName);
                 
-                document.getElementById('loadingText').textContent = `Extracting brand name with AI...`;
+                // Step 3: Try multiple brand name variations for best results
+                document.getElementById('loadingText').textContent = `Fetching ad data for ${profileName}...`;
+                console.log('✅ Step 3: Trying multiple brand name variations...');
                 
-                const brandName = await extractBrandNameWithGemini(profileName);
-                console.log('✅ Step 3: Gemini extracted brand name:', brandName);
-
-                // Step 3: Fetch ad statistics using AI-extracted brand name
-                document.getElementById('loadingText').textContent = `Fetching ad data for ${brandName}...`;
-                console.log('✅ Step 4: Fetching ad data for:', brandName);
+                // Try: Full name, AI-extracted, username
+                const brandVariations = [
+                    profileName,  // "Amazon India" - Try full name first (usually has most data)
+                    await extractBrandNameWithGemini(profileName),  // "Amazon" - AI-extracted
+                    username  // "amazondotin" - Fallback
+                ];
                 
-                const adData = await fetchAdData(brandName);
-                console.log('✅ Step 5: Ad data received:', adData);
+                console.log('Brand name variations to try:', brandVariations);
+                
+                let adData = null;
+                let usedBrandName = profileName;
+                
+                // Try each variation until we get non-zero results
+                for (const brand of brandVariations) {
+                    console.log(`📡 Trying brand: "${brand}"`);
+                    const testData = await fetchAdData(brand);
+                    
+                    if (testData && testData.total_ad_count > 0) {
+                        adData = testData;
+                        usedBrandName = brand;
+                        console.log(`✅ Found ads for "${brand}":`, testData);
+                        break;
+                    } else {
+                        console.log(`⚠️ No ads found for "${brand}", trying next...`);
+                    }
+                }
+                
+                // If still no data, use the first result anyway
+                if (!adData) {
+                    adData = await fetchAdData(profileName);
+                    usedBrandName = profileName;
+                }
+                
+                console.log('✅ Step 4: Final ad data:', adData);
+                console.log('✅ Step 5: Using brand name:', usedBrandName);
 
                 // Display results
                 console.log('✅ Step 6: Displaying results...');
-                displayResults(instagramData, adData, brandName, username);
+                displayResults(instagramData, adData, usedBrandName, username);
 
             } catch (error) {
                 console.error('Error:', error);
