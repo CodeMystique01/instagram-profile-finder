@@ -416,11 +416,19 @@
 
                 const data = await response.json();
                 
+                // Debug: Log the response to see what we're getting
+                console.log('API Response:', data);
+                
+                // Check if we got valid data
+                if (!data || (data.error || data.message)) {
+                    throw new Error(data.message || 'Invalid profile data received');
+                }
+                
                 // Display the profile
                 displayProfile(data, cleanUsername);
             } catch (error) {
                 console.error('Error:', error);
-                showError('Failed to fetch profile. Please check the username and try again.');
+                showError(`Error: ${error.message || 'Failed to fetch profile. Please check the username and try again.'}`);
             } finally {
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('searchBtn').disabled = false;
@@ -428,6 +436,16 @@
         }
 
         function displayProfile(data, username) {
+            console.log('Displaying profile for:', username);
+            console.log('Data structure:', {
+                has_profile_pic: !!(data.profile_pic_url_hd || data.profile_pic_url),
+                has_full_name: !!data.full_name,
+                has_posts: !!data.edge_owner_to_timeline_media,
+                has_followers: !!data.edge_followed_by,
+                has_following: !!data.edge_follow,
+                has_bio: !!data.biography
+            });
+            
             // Update profile picture
             document.getElementById('profilePic').src = data.profile_pic_url_hd || data.profile_pic_url || 'https://via.placeholder.com/80';
             
