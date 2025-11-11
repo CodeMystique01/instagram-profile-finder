@@ -413,53 +413,20 @@
                     throw new Error('Could not fetch Instagram profile');
                 }
 
-                // Step 2: Get full profile name for ad search
+                // Step 2: Get profile name from Instagram
                 const profileName = instagramData.full_name || username;
                 console.log('✅ Step 2: Instagram profile name:', profileName);
                 
-                // Step 3: Try multiple brand name variations for best results
+                // Step 3: Fetch ad data using profile name directly
                 document.getElementById('loadingText').textContent = `Fetching ad data for ${profileName}...`;
-                console.log('✅ Step 3: Trying multiple brand name variations...');
+                console.log('✅ Step 3: Fetching ad data for:', profileName);
                 
-                // Try: Full name, AI-extracted, username
-                const brandVariations = [
-                    profileName,  // "Amazon India" - Try full name first (usually has most data)
-                    await extractBrandNameWithGemini(profileName),  // "Amazon" - AI-extracted
-                    username  // "amazondotin" - Fallback
-                ];
-                
-                console.log('Brand name variations to try:', brandVariations);
-                
-                let adData = null;
-                let usedBrandName = profileName;
-                
-                // Try each variation until we get non-zero results
-                for (const brand of brandVariations) {
-                    console.log(`📡 Trying brand: "${brand}"`);
-                    const testData = await fetchAdData(brand);
-                    
-                    if (testData && testData.total_ad_count > 0) {
-                        adData = testData;
-                        usedBrandName = brand;
-                        console.log(`✅ Found ads for "${brand}":`, testData);
-                        break;
-                    } else {
-                        console.log(`⚠️ No ads found for "${brand}", trying next...`);
-                    }
-                }
-                
-                // If still no data, use the first result anyway
-                if (!adData) {
-                    adData = await fetchAdData(profileName);
-                    usedBrandName = profileName;
-                }
-                
-                console.log('✅ Step 4: Final ad data:', adData);
-                console.log('✅ Step 5: Using brand name:', usedBrandName);
+                const adData = await fetchAdData(profileName);
+                console.log('✅ Step 4: Ad data received:', adData);
 
                 // Display results
-                console.log('✅ Step 6: Displaying results...');
-                displayResults(instagramData, adData, usedBrandName, username);
+                console.log('✅ Step 5: Displaying results...');
+                displayResults(instagramData, adData, profileName, username);
 
             } catch (error) {
                 console.error('Error:', error);
@@ -577,25 +544,37 @@ Return ONLY the brand name, nothing else. No explanations.`;
         }
 
         async function fetchAdData(brandName) {
-            const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`;
-            console.log('📡 Fetching ads from:', url);
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                console.error('❌ BrandBooster API failed:', response.status);
-                throw new Error(`Failed to fetch ad data (Status: ${response.status})`);
-            }
+            try {
+                const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`;
+                console.log('📡 Fetching from URL:', url);
+                
+                const response = await fetch(url);
+                console.log('📡 Response status:', response.status);
+                
+                if (!response.ok) {
+                    console.error('❌ API returned error status:', response.status);
+                    // Return zero data instead of throwing
+                    return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
+                }
 
-            const data = await response.json();
-            console.log('📊 BrandBooster Response:', data);
-            
-            // Validate data structure
-            if (!data.total_ad_count && data.total_ad_count !== 0) {
-                console.warn('⚠️ Unexpected data structure:', data);
+                const data = await response.json();
+                console.log('📊 BrandBooster raw response:', JSON.stringify(data));
+                
+                // Ensure data has the expected structure
+                const result = {
+                    total_ad_count: data.total_ad_count || 0,
+                    active_ad_count: data.active_ad_count || 0,
+                    inactive_ad_count: data.inactive_ad_count || 0
+                };
+                
+                console.log('📊 Processed ad data:', result);
+                return result;
+                
+            } catch (error) {
+                console.error('❌ Error fetching ad data:', error);
+                // Return zero data on error
+                return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
             }
-            
-            return data;
         }
 
         function displayResults(instagramData, adData, brandName, username) {

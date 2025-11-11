@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test - Instagram Ad Analytics</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        .big { font-size: 32px; font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Simple Test</h1>
+    <button onclick="test()">Test "Amazon India" Ads</button>
+    <div id="result"></div>
+
+    <script>
+        async function test() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>⏳ Fetching...</p>';
+            
+            try {
+                const url = 'https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=Amazon%20India';
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url);
+                console.log('Status:', response.status);
+                
+                const data = await response.json();
+                console.log('Data:', data);
+                
+                result.innerHTML = `
+                    <div class="result">
+                        <h2>✅ Success!</h2>
+                        <p>Total Ads: <span class="big">${data.total_ad_count || 0}</span></p>
+                        <p>Active: ${data.active_ad_count || 0}</p>
+                        <p>Inactive: ${data.inactive_ad_count || 0}</p>
+                        <hr>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result">❌ Error: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
