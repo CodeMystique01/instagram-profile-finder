@@ -254,9 +254,26 @@
             border-radius: 10px;
             margin-top: 20px;
             animation: shake 0.5s ease;
+            white-space: pre-line;
         }
 
         .error.active {
+            display: block;
+        }
+        
+        .demo-notice {
+            display: none;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .demo-notice.active {
             display: block;
         }
 
@@ -299,6 +316,10 @@
             .input-group {
                 flex-direction: column;
             }
+            
+            input[type="text"]::placeholder {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -315,7 +336,7 @@
                 <input 
                     type="text" 
                     id="usernameInput" 
-                    placeholder="Enter Instagram username (e.g., therock)"
+                    placeholder="Try: cristiano, therock, nasa, leomessi, selenagomez"
                     autocomplete="off"
                 >
                 <button id="searchBtn" onclick="searchProfile()">Search</button>
@@ -328,6 +349,10 @@
         </div>
 
         <div class="error" id="error"></div>
+        
+        <div class="demo-notice" id="demoNotice">
+            ⚠️ Using demo data - API services unavailable
+        </div>
 
         <div class="result" id="result">
             <div class="profile-card">
@@ -367,6 +392,55 @@
     </div>
 
     <script>
+        // Demo data for when APIs fail
+        const demoProfiles = {
+            'cristiano': {
+                username: 'cristiano',
+                full_name: 'Cristiano Ronaldo',
+                profile_pic_url_hd: 'https://via.placeholder.com/150/4A90E2/FFFFFF?text=CR7',
+                biography: 'Football player ⚽ | @nike athlete | Records & Goals',
+                edge_followed_by: { count: 612000000 },
+                edge_follow: { count: 567 },
+                edge_owner_to_timeline_media: { count: 3589 }
+            },
+            'therock': {
+                username: 'therock',
+                full_name: 'Dwayne Johnson',
+                profile_pic_url_hd: 'https://via.placeholder.com/150/E74C3C/FFFFFF?text=DJ',
+                biography: 'Actor 🎬 | Producer | Entrepreneur | Tequila @teremana',
+                edge_followed_by: { count: 395000000 },
+                edge_follow: { count: 451 },
+                edge_owner_to_timeline_media: { count: 7845 }
+            },
+            'nasa': {
+                username: 'nasa',
+                full_name: 'NASA',
+                profile_pic_url_hd: 'https://via.placeholder.com/150/1E3A8A/FFFFFF?text=NASA',
+                biography: '🚀 Exploring the universe and our home planet. Official NASA Instagram.',
+                edge_followed_by: { count: 92000000 },
+                edge_follow: { count: 89 },
+                edge_owner_to_timeline_media: { count: 4523 }
+            },
+            'selenagomez': {
+                username: 'selenagomez',
+                full_name: 'Selena Gomez',
+                profile_pic_url_hd: 'https://via.placeholder.com/150/9B59B6/FFFFFF?text=SG',
+                biography: 'Artist 🎤 | Actress | Producer | @rarebeauty founder',
+                edge_followed_by: { count: 428000000 },
+                edge_follow: { count: 312 },
+                edge_owner_to_timeline_media: { count: 1923 }
+            },
+            'leomessi': {
+                username: 'leomessi',
+                full_name: 'Leo Messi',
+                profile_pic_url_hd: 'https://via.placeholder.com/150/16A085/FFFFFF?text=LM',
+                biography: 'Football player ⚽ | World Cup Champion 🏆',
+                edge_followed_by: { count: 502000000 },
+                edge_follow: { count: 289 },
+                edge_owner_to_timeline_media: { count: 1089 }
+            }
+        };
+        
         // Allow search on Enter key
         document.getElementById('usernameInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -398,30 +472,85 @@
             // Reset states
             document.getElementById('result').classList.remove('active');
             document.getElementById('error').classList.remove('active');
+            document.getElementById('demoNotice').classList.remove('active');
             document.getElementById('loading').classList.add('active');
             document.getElementById('searchBtn').disabled = true;
 
             try {
-                const response = await fetch(`https://instagram-profile1.p.rapidapi.com/getprofile/${cleanUsername}`, {
-                    method: 'GET',
-                    headers: {
-                        'x-rapidapi-host': 'instagram-profile1.p.rapidapi.com',
-                        'x-rapidapi-key': 'dd3c34e814msh61c8bd0f44c7617p1449b2jsn7b9eec3255f0'
+                // Try to fetch from Instagram's public endpoint first (no API key needed)
+                let data;
+                let usingBackupMethod = false;
+                
+                try {
+                    // Method 1: Try our secure backend API
+                    const response = await fetch(`/api/instagram?username=${cleanUsername}`);
+
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log('Backend API Response:', data);
+                        
+                        // Check if we got valid data
+                        if (data.error || !data.username) {
+                            throw new Error('User not found via backend API');
+                        }
+                    } else {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Backend API failed with status: ${response.status}`);
                     }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch profile. Status: ${response.status}`);
+                } catch (apiError) {
+                    console.warn('RapidAPI failed:', apiError);
+                    
+                    // Method 2: Try Instagram's public JSON endpoint
+                    try {
+                        const instagramResponse = await fetch(`https://www.instagram.com/${cleanUsername}/?__a=1&__d=dis`, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (instagramResponse.ok) {
+                            const instagramData = await instagramResponse.json();
+                            console.log('Instagram direct response:', instagramData);
+                            
+                            // Transform Instagram data to our format
+                            if (instagramData.graphql?.user || instagramData.user) {
+                                const user = instagramData.graphql?.user || instagramData.user;
+                                data = {
+                                    username: user.username,
+                                    full_name: user.full_name,
+                                    profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url,
+                                    profile_pic_url_hd: user.profile_pic_url_hd,
+                                    biography: user.biography,
+                                    edge_followed_by: user.edge_followed_by,
+                                    edge_follow: user.edge_follow,
+                                    edge_owner_to_timeline_media: user.edge_owner_to_timeline_media
+                                };
+                                usingBackupMethod = true;
+                            } else {
+                                throw new Error('Instagram endpoint returned unexpected format');
+                            }
+                        } else {
+                            throw new Error('Instagram direct method also failed');
+                        }
+                    } catch (instagramError) {
+                        console.warn('Instagram direct method failed:', instagramError);
+                        
+                        // Method 3: Check if we have demo data for this profile
+                        if (demoProfiles[cleanUsername.toLowerCase()]) {
+                            data = demoProfiles[cleanUsername.toLowerCase()];
+                            usingBackupMethod = true;
+                            console.log('Using demo data for:', cleanUsername);
+                        } else {
+                            // No demo data available
+                            throw new Error(`Profile "${cleanUsername}" not found. API services are currently unavailable.\n\nTry these demo profiles: cristiano, therock, nasa, selenagomez, leomessi`);
+                        }
+                    }
                 }
-
-                const data = await response.json();
                 
-                // Debug: Log the response to see what we're getting
-                console.log('API Response:', data);
-                
-                // Check if we got valid data
-                if (!data || (data.error || data.message)) {
-                    throw new Error(data.message || 'Invalid profile data received');
+                // Show demo notice if using fallback data
+                if (demoProfiles[cleanUsername.toLowerCase()]) {
+                    document.getElementById('demoNotice').classList.add('active');
                 }
                 
                 // Display the profile

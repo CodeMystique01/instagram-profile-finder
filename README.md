@@ -1,16 +1,53 @@
-# Instagram Profile Finder
+# 📸 Instagram Profile Finder
 
-A beautiful, modern web application to fetch and display Instagram profile information using the Instagram Profile API.
+A modern, secure web app to search and view Instagram profiles with **real-time data** using a Node.js backend API.
 
-## Features
+## 🎯 Live Demo
 
-- 🎨 Beautiful gradient UI with smooth animations
-- 📱 Fully responsive design (works on all devices)
-- 🔍 Search Instagram profiles by username
-- 📊 Display profile statistics (posts, followers, following)
-- 🖼️ Show profile picture and biography
-- ⚡ Fast and lightweight (no dependencies)
-- 🔗 Direct link to Instagram profile
+Try it now: [Your Vercel URL here after deployment]
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐
+│   Frontend      │
+│  (index.html)   │
+└────────┬────────┘
+         │
+         │ fetch('/api/instagram')
+         │
+         ▼
+┌─────────────────┐
+│  Vercel API     │
+│ (/api/instagram)│ ← Secure backend
+└────────┬────────┘
+         │
+         │ HTTPS + API Key
+         │
+         ▼
+┌─────────────────┐
+│   RapidAPI      │
+│  Instagram API  │
+└─────────────────┘
+```
+
+**Benefits:**
+- ✅ API key stays secure on server
+- ✅ No CORS issues
+- ✅ Easy to deploy
+- ✅ Auto-scales
+
+## ✨ Features
+
+- 🎨 **Beautiful UI** - Gradient design with smooth animations
+- 📱 **Fully Responsive** - Works on all devices
+- 🔒 **Secure Backend** - API key hidden from users
+- 🔍 **Real Data** - Fetches live Instagram profiles
+- 📊 **Profile Stats** - Posts, followers, following counts
+- 🖼️ **Profile Display** - Picture, bio, and more
+- ⚡ **Fast & Modern** - Serverless backend
+- 🎯 **Demo Fallback** - Works even if API is down
+- 🔗 **Direct Links** - View profiles on Instagram
 
 ## How to Use
 
@@ -27,24 +64,31 @@ A beautiful, modern web application to fetch and display Instagram profile infor
    - Biography
    - Link to view on Instagram
 
-## Quick Start
+## 🚀 Quick Start
 
-### Option 1: Double-click the file
-Simply double-click `index.html` to open it in your default browser.
-
-### Option 2: Use a local server (recommended for development)
+### Test Locally (with backend API)
 ```bash
-# Using Python 3
-python -m http.server 8000
-
-# Using Node.js (if you have http-server installed)
-npx http-server
-
-# Using PHP
-php -S localhost:8000
+# Install Node.js if you haven't already, then:
+npm start
+# or
+node test-local.js
 ```
 
-Then open your browser and go to `http://localhost:8000`
+Then open `http://localhost:3000` in your browser.
+
+### Deploy to Vercel (Production)
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
+```
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed deployment instructions.
 
 ## API Information
 

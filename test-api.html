@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .output {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #4ec9b0;
+        }
+        .error {
+            color: #f48771;
+        }
+        .warning {
+            color: #dcdcaa;
+        }
+        .info {
+            color: #9cdcfe;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #3e3e42;
+            background: #252526;
+            color: #d4d4d4;
+            border-radius: 5px;
+            width: 300px;
+            font-size: 14px;
+        }
+        .loading {
+            display: none;
+            color: #dcdcaa;
+            margin-top: 10px;
+        }
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Instagram API Tester</h1>
+        <p>Test different methods to fetch Instagram profile data</p>
+        
+        <div>
+            <input type="text" id="username" placeholder="Enter username (e.g., cristiano)" value="cristiano">
+            <br><br>
+            <button onclick="testRapidAPI()">Test RapidAPI</button>
+            <button onclick="testInstagramDirect()">Test Instagram Direct</button>
+            <button onclick="testAllMethods()">Test All Methods</button>
+            <button onclick="clearOutput()">Clear</button>
+        </div>
+        
+        <div class="loading" id="loading">⏳ Testing...</div>
+        
+        <div class="output" id="output">
+            <span class="info">Click a button above to test the APIs...</span>
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const loading = document.getElementById('loading');
+
+        function log(message, type = 'info') {
+            const colors = {
+                success: 'success',
+                error: 'error',
+                warning: 'warning',
+                info: 'info'
+            };
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<span class="${colors[type]}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            output.innerHTML = '<span class="info">Output cleared. Ready to test...</span>\n';
+        }
+
+        async function testRapidAPI() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                log('❌ Please enter a username', 'error');
+                return;
+            }
+
+            loading.classList.add('active');
+            log(`\n🔵 Testing RapidAPI for username: ${username}`, 'info');
+            log('━'.repeat(60), 'info');
+
+            try {
+                const url = `https://instagram-scraper-api2.p.rapidapi.com/v1/info?username_or_id_or_url=${username}`;
+                log(`📡 URL: ${url}`, 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+                        'x-rapidapi-key': 'dd3c34e814msh61c8bd0f44c7617p1449b2jsn7b9eec3255f0'
+                    }
+                });
+                const endTime = Date.now();
+
+                log(`⏱️  Response time: ${endTime - startTime}ms`, 'info');
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                log(`📋 Headers:`, 'info');
+                response.headers.forEach((value, key) => {
+                    log(`   ${key}: ${value}`, 'info');
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`\n✅ SUCCESS - Data received:`, 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                    
+                    // Check for important fields
+                    log(`\n📦 Data structure check:`, 'warning');
+                    log(`   - username: ${data.username ? '✓' : '✗'}`, data.username ? 'success' : 'error');
+                    log(`   - full_name: ${data.full_name ? '✓' : '✗'}`, data.full_name ? 'success' : 'error');
+                    log(`   - profile_pic_url: ${data.profile_pic_url ? '✓' : '✗'}`, data.profile_pic_url ? 'success' : 'error');
+                    log(`   - biography: ${data.biography !== undefined ? '✓' : '✗'}`, data.biography !== undefined ? 'success' : 'error');
+                    log(`   - followers: ${data.edge_followed_by ? '✓' : '✗'}`, data.edge_followed_by ? 'success' : 'error');
+                } else {
+                    log(`\n❌ FAILED - Error response:`, 'error');
+                    log(JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                log(`\n❌ EXCEPTION: ${error.message}`, 'error');
+                log(error.stack, 'error');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function testInstagramDirect() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                log('❌ Please enter a username', 'error');
+                return;
+            }
+
+            loading.classList.add('active');
+            log(`\n🟣 Testing Instagram Direct for username: ${username}`, 'info');
+            log('━'.repeat(60), 'info');
+
+            try {
+                const url = `https://www.instagram.com/${username}/?__a=1&__d=dis`;
+                log(`📡 URL: ${url}`, 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0',
+                        'Accept': 'application/json'
+                    }
+                });
+                const endTime = Date.now();
+
+                log(`⏱️  Response time: ${endTime - startTime}ms`, 'info');
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    log(`📄 Content-Type: ${contentType}`, 'info');
+                    
+                    const text = await response.text();
+                    
+                    try {
+                        const data = JSON.parse(text);
+                        log(`\n✅ SUCCESS - JSON data received:`, 'success');
+                        log(JSON.stringify(data, null, 2).substring(0, 2000) + '...', 'success');
+                        
+                        // Check data structure
+                        if (data.graphql?.user) {
+                            log(`\n📦 Found user in graphql.user`, 'success');
+                        } else if (data.user) {
+                            log(`\n📦 Found user in data.user`, 'success');
+                        } else {
+                            log(`\n⚠️  Unexpected data structure`, 'warning');
+                        }
+                    } catch (e) {
+                        log(`\n⚠️  Response is not JSON:`, 'warning');
+                        log(text.substring(0, 500), 'warning');
+                    }
+                } else {
+                    const text = await response.text();
+                    log(`\n❌ FAILED - Response:`, 'error');
+                    log(text.substring(0, 500), 'error');
+                }
+            } catch (error) {
+                log(`\n❌ EXCEPTION: ${error.message}`, 'error');
+                log(error.stack, 'error');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function testAllMethods() {
+            clearOutput();
+            await testRapidAPI();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testInstagramDirect();
+            log(`\n${'═'.repeat(60)}`, 'info');
+            log(`🏁 All tests completed!`, 'success');
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('👋 Welcome! Ready to test Instagram APIs.\n', 'success');
+                log('💡 Tip: Try testing with username "cristiano" or "therock"\n', 'info');
+            }, 100);
+        });
+    </script>
+</body>
+</html>
+

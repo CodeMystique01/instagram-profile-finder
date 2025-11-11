@@ -1,0 +1,22 @@
+{
+  "name": "instagram-profile-finder",
+  "version": "1.0.0",
+  "description": "Instagram Profile Finder with secure backend API",
+  "main": "index.html",
+  "scripts": {
+    "start": "node test-local.js",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "test": "node test-local.js"
+  },
+  "keywords": [
+    "instagram",
+    "profile",
+    "finder",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {}
+}
+

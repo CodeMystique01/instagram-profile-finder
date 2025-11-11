@@ -24,3 +24,17 @@ yarn-error.log*
 *.tmp
 *.temp
 
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+.vercel.json
+
