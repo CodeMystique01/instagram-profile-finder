@@ -604,9 +604,9 @@ Return ONLY the brand name, nothing else. No explanations.`;
                 
                 // Ensure data has the expected structure
                 const result = {
-                    total_ad_count: data.total_ad_count || 0,
-                    active_ad_count: data.active_ad_count || 0,
-                    inactive_ad_count: data.inactive_ad_count || 0
+                    total_ad_count: Number(data.total_ad_count ?? 0),
+                    active_ad_count: Number(data.active_ad_count ?? 0),
+                    inactive_ad_count: Number(data.inactive_ad_count ?? 0)
                 };
                 
                 console.log('📊 Processed ad data:', result);
@@ -642,9 +642,9 @@ Return ONLY the brand name, nothing else. No explanations.`;
             document.getElementById('brandName').textContent = brandName;
 
             // Display ad statistics with validation
-            const totalAds = adData?.total_ad_count || 0;
-            const activeAds = adData?.active_ad_count || 0;
-            const inactiveAds = adData?.inactive_ad_count || 0;
+            const totalAds = Number(adData?.total_ad_count ?? 0);
+            const activeAds = Number(adData?.active_ad_count ?? 0);
+            const inactiveAds = Number(adData?.inactive_ad_count ?? 0);
             
             console.log('📊 Setting ad counts:', { totalAds, activeAds, inactiveAds });
             
