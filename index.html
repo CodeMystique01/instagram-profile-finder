@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Profile Finder</title>
+    <title>Brand Ad Analytics - BrandBooster</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             animation: slideUp 0.5s ease;
         }
@@ -58,11 +58,11 @@
             font-size: 1rem;
         }
 
-        .instagram-icon {
+        .icon {
             width: 60px;
             height: 60px;
             margin: 0 auto 20px;
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -159,49 +159,34 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        .profile-card {
+        .result-card {
             background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
             border-radius: 15px;
             padding: 25px;
             margin-top: 20px;
         }
 
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 20px;
+        .result-header {
+            text-align: center;
+            margin-bottom: 25px;
         }
 
-        .profile-pic {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-info h2 {
+        .result-header h2 {
             color: #333;
             font-size: 1.5rem;
             margin-bottom: 5px;
         }
 
-        .profile-info .username {
+        .brand-name {
             color: #667eea;
-            font-size: 1rem;
+            font-weight: bold;
         }
 
-        .profile-stats {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
@@ -210,39 +195,29 @@
 
         .stat {
             text-align: center;
-            padding: 15px;
+            padding: 20px 15px;
             background: white;
             border-radius: 10px;
+            transition: transform 0.2s;
+        }
+
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #333;
+            margin-bottom: 5px;
         }
 
         .stat-label {
-            font-size: 0.85rem;
+            font-size: 0.875rem;
             color: #666;
-            margin-top: 5px;
-        }
-
-        .profile-bio {
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-        }
-
-        .profile-bio h3 {
-            color: #333;
-            font-size: 1rem;
-            margin-bottom: 10px;
-        }
-
-        .profile-bio p {
-            color: #666;
-            line-height: 1.6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .error {
@@ -254,26 +229,9 @@
             border-radius: 10px;
             margin-top: 20px;
             animation: shake 0.5s ease;
-            white-space: pre-line;
         }
 
         .error.active {
-            display: block;
-        }
-        
-        .demo-notice {
-            display: none;
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            color: #856404;
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-        
-        .demo-notice.active {
             display: block;
         }
 
@@ -283,21 +241,14 @@
             75% { transform: translateX(10px); }
         }
 
-        .external-link {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .external-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-left: 4px solid #4a90e2;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #555;
         }
 
         @media (max-width: 480px) {
@@ -309,14 +260,14 @@
                 font-size: 1.5rem;
             }
 
-            .profile-stats {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
             .input-group {
                 flex-direction: column;
             }
-            
+
             input[type="text"]::placeholder {
                 font-size: 14px;
             }
@@ -326,125 +277,65 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="instagram-icon">📸</div>
-            <h1>Instagram Profile Finder</h1>
-            <p>Enter an Instagram username to view profile details</p>
+            <div class="icon">🚀</div>
+            <h1>Brand Ad Analytics</h1>
+            <p>Discover advertising statistics for any brand</p>
         </div>
 
         <div class="search-box">
             <div class="input-group">
                 <input 
                     type="text" 
-                    id="usernameInput" 
-                    placeholder="Try: cristiano, therock, nasa, leomessi, selenagomez"
+                    id="brandInput" 
+                    placeholder="Enter brand name (e.g., Nike, Adidas, Apple, Tesla)"
+                    value="Nike"
                     autocomplete="off"
                 >
-                <button id="searchBtn" onclick="searchProfile()">Search</button>
+                <button id="searchBtn" onclick="searchBrand()">Search</button>
             </div>
         </div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Fetching profile...</p>
+            <p>Fetching brand data...</p>
         </div>
 
         <div class="error" id="error"></div>
-        
-        <div class="demo-notice" id="demoNotice">
-            ⚠️ Using demo data - API services unavailable
-        </div>
 
         <div class="result" id="result">
-            <div class="profile-card">
-                <div class="profile-header">
-                    <img id="profilePic" class="profile-pic" src="" alt="Profile Picture">
-                    <div class="profile-info">
-                        <h2 id="fullName"></h2>
-                        <div class="username">@<span id="username"></span></div>
+            <div class="result-card">
+                <div class="result-header">
+                    <h2>📊 Ad Statistics</h2>
+                    <p>Brand: <span class="brand-name" id="brandName"></span></p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-value" id="totalAds">0</div>
+                        <div class="stat-label">Total Ads</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="activeAds">0</div>
+                        <div class="stat-label">Active Ads</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="inactiveAds">0</div>
+                        <div class="stat-label">Inactive Ads</div>
                     </div>
                 </div>
 
-                <div class="profile-stats">
-                    <div class="stat">
-                        <div class="stat-value" id="posts">0</div>
-                        <div class="stat-label">Posts</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="followers">0</div>
-                        <div class="stat-label">Followers</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="following">0</div>
-                        <div class="stat-label">Following</div>
-                    </div>
+                <div class="info">
+                    💡 <strong>Tip:</strong> Try searching for popular brands like Nike, Adidas, Apple, Tesla, Coca-Cola, or Samsung to see their advertising statistics!
                 </div>
-
-                <div class="profile-bio">
-                    <h3>Biography</h3>
-                    <p id="bio">No bio available</p>
-                </div>
-
-                <a id="profileLink" href="" target="_blank" class="external-link">
-                    View on Instagram →
-                </a>
             </div>
         </div>
     </div>
 
     <script>
-        // Demo data for when APIs fail
-        const demoProfiles = {
-            'cristiano': {
-                username: 'cristiano',
-                full_name: 'Cristiano Ronaldo',
-                profile_pic_url_hd: 'https://via.placeholder.com/150/4A90E2/FFFFFF?text=CR7',
-                biography: 'Football player ⚽ | @nike athlete | Records & Goals',
-                edge_followed_by: { count: 612000000 },
-                edge_follow: { count: 567 },
-                edge_owner_to_timeline_media: { count: 3589 }
-            },
-            'therock': {
-                username: 'therock',
-                full_name: 'Dwayne Johnson',
-                profile_pic_url_hd: 'https://via.placeholder.com/150/E74C3C/FFFFFF?text=DJ',
-                biography: 'Actor 🎬 | Producer | Entrepreneur | Tequila @teremana',
-                edge_followed_by: { count: 395000000 },
-                edge_follow: { count: 451 },
-                edge_owner_to_timeline_media: { count: 7845 }
-            },
-            'nasa': {
-                username: 'nasa',
-                full_name: 'NASA',
-                profile_pic_url_hd: 'https://via.placeholder.com/150/1E3A8A/FFFFFF?text=NASA',
-                biography: '🚀 Exploring the universe and our home planet. Official NASA Instagram.',
-                edge_followed_by: { count: 92000000 },
-                edge_follow: { count: 89 },
-                edge_owner_to_timeline_media: { count: 4523 }
-            },
-            'selenagomez': {
-                username: 'selenagomez',
-                full_name: 'Selena Gomez',
-                profile_pic_url_hd: 'https://via.placeholder.com/150/9B59B6/FFFFFF?text=SG',
-                biography: 'Artist 🎤 | Actress | Producer | @rarebeauty founder',
-                edge_followed_by: { count: 428000000 },
-                edge_follow: { count: 312 },
-                edge_owner_to_timeline_media: { count: 1923 }
-            },
-            'leomessi': {
-                username: 'leomessi',
-                full_name: 'Leo Messi',
-                profile_pic_url_hd: 'https://via.placeholder.com/150/16A085/FFFFFF?text=LM',
-                biography: 'Football player ⚽ | World Cup Champion 🏆',
-                edge_followed_by: { count: 502000000 },
-                edge_follow: { count: 289 },
-                edge_owner_to_timeline_media: { count: 1089 }
-            }
-        };
-        
         // Allow search on Enter key
-        document.getElementById('usernameInput').addEventListener('keypress', function(e) {
+        document.getElementById('brandInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                searchProfile();
+                searchBrand();
             }
         });
 
@@ -454,144 +345,54 @@
             } else if (num >= 1000) {
                 return (num / 1000).toFixed(1) + 'K';
             }
-            return num.toString();
+            return num.toLocaleString();
         }
 
-        async function searchProfile() {
-            const username = document.getElementById('usernameInput').value.trim();
+        async function searchBrand() {
+            const brand = document.getElementById('brandInput').value.trim();
             
             // Validation
-            if (!username) {
-                showError('Please enter a username');
+            if (!brand) {
+                showError('Please enter a brand name');
                 return;
             }
-
-            // Remove @ if user included it
-            const cleanUsername = username.replace('@', '');
 
             // Reset states
             document.getElementById('result').classList.remove('active');
             document.getElementById('error').classList.remove('active');
-            document.getElementById('demoNotice').classList.remove('active');
             document.getElementById('loading').classList.add('active');
             document.getElementById('searchBtn').disabled = true;
 
             try {
-                // Try to fetch from Instagram's public endpoint first (no API key needed)
-                let data;
-                let usingBackupMethod = false;
+                // Fetch from BrandBooster API
+                const response = await fetch(`https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brand)}`);
                 
-                try {
-                    // Method 1: Try Instagram direct scraping (no API key needed)
-                    const response = await fetch(`/api/instagram-hybrid?username=${cleanUsername}`);
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}`);
+                }
 
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log('Backend API Response:', data);
-                        
-                        // Check if we got valid data
-                        if (data.error || !data.username) {
-                            throw new Error('User not found via backend API');
-                        }
-                    } else {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.error || `Backend API failed with status: ${response.status}`);
-                    }
-                } catch (apiError) {
-                    console.warn('RapidAPI failed:', apiError);
-                    
-                    // Method 2: Try Instagram's public JSON endpoint
-                    try {
-                        const instagramResponse = await fetch(`https://www.instagram.com/${cleanUsername}/?__a=1&__d=dis`, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (instagramResponse.ok) {
-                            const instagramData = await instagramResponse.json();
-                            console.log('Instagram direct response:', instagramData);
-                            
-                            // Transform Instagram data to our format
-                            if (instagramData.graphql?.user || instagramData.user) {
-                                const user = instagramData.graphql?.user || instagramData.user;
-                                data = {
-                                    username: user.username,
-                                    full_name: user.full_name,
-                                    profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url,
-                                    profile_pic_url_hd: user.profile_pic_url_hd,
-                                    biography: user.biography,
-                                    edge_followed_by: user.edge_followed_by,
-                                    edge_follow: user.edge_follow,
-                                    edge_owner_to_timeline_media: user.edge_owner_to_timeline_media
-                                };
-                                usingBackupMethod = true;
-                            } else {
-                                throw new Error('Instagram endpoint returned unexpected format');
-                            }
-                        } else {
-                            throw new Error('Instagram direct method also failed');
-                        }
-                    } catch (instagramError) {
-                        console.warn('Instagram direct method failed:', instagramError);
-                        
-                        // Method 3: Check if we have demo data for this profile
-                        if (demoProfiles[cleanUsername.toLowerCase()]) {
-                            data = demoProfiles[cleanUsername.toLowerCase()];
-                            usingBackupMethod = true;
-                            console.log('Using demo data for:', cleanUsername);
-                        } else {
-                            // No demo data available
-                            throw new Error(`Profile "${cleanUsername}" not found. API services are currently unavailable.\n\nTry these demo profiles: cristiano, therock, nasa, selenagomez, leomessi`);
-                        }
-                    }
-                }
+                const data = await response.json();
+                console.log('BrandBooster Response:', data);
                 
-                // Show demo notice if using fallback data
-                if (demoProfiles[cleanUsername.toLowerCase()]) {
-                    document.getElementById('demoNotice').classList.add('active');
-                }
-                
-                // Display the profile
-                displayProfile(data, cleanUsername);
+                // Display the results
+                displayResults(data, brand);
             } catch (error) {
                 console.error('Error:', error);
-                showError(`Error: ${error.message || 'Failed to fetch profile. Please check the username and try again.'}`);
+                showError(`Failed to fetch brand data for "${brand}". Please try another brand name.`);
             } finally {
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('searchBtn').disabled = false;
             }
         }
 
-        function displayProfile(data, username) {
-            console.log('Displaying profile for:', username);
-            console.log('Data structure:', {
-                has_profile_pic: !!(data.profile_pic_url_hd || data.profile_pic_url),
-                has_full_name: !!data.full_name,
-                has_posts: !!data.edge_owner_to_timeline_media,
-                has_followers: !!data.edge_followed_by,
-                has_following: !!data.edge_follow,
-                has_bio: !!data.biography
-            });
+        function displayResults(data, brand) {
+            // Update brand name
+            document.getElementById('brandName').textContent = brand;
             
-            // Update profile picture
-            document.getElementById('profilePic').src = data.profile_pic_url_hd || data.profile_pic_url || 'https://via.placeholder.com/80';
-            
-            // Update name and username
-            document.getElementById('fullName').textContent = data.full_name || username;
-            document.getElementById('username').textContent = username;
-            
-            // Update stats
-            document.getElementById('posts').textContent = formatNumber(data.edge_owner_to_timeline_media?.count || 0);
-            document.getElementById('followers').textContent = formatNumber(data.edge_followed_by?.count || 0);
-            document.getElementById('following').textContent = formatNumber(data.edge_follow?.count || 0);
-            
-            // Update bio
-            document.getElementById('bio').textContent = data.biography || 'No bio available';
-            
-            // Update Instagram link
-            document.getElementById('profileLink').href = `https://www.instagram.com/${username}`;
+            // Update stats with formatted numbers
+            document.getElementById('totalAds').textContent = formatNumber(data.total_ad_count || 0);
+            document.getElementById('activeAds').textContent = formatNumber(data.active_ad_count || 0);
+            document.getElementById('inactiveAds').textContent = formatNumber(data.inactive_ad_count || 0);
             
             // Show result
             document.getElementById('result').classList.add('active');
@@ -607,7 +408,11 @@
                 errorDiv.classList.remove('active');
             }, 5000);
         }
+
+        // Auto-search Nike on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => searchBrand(), 500);
+        });
     </script>
 </body>
 </html>
-
