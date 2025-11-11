@@ -415,19 +415,22 @@
 
                 // Step 2: Use Gemini AI to extract clean brand name from profile
                 const profileName = instagramData.full_name || username;
-                console.log('Instagram profile name:', profileName);
+                console.log('✅ Step 2: Instagram profile name:', profileName);
                 
                 document.getElementById('loadingText').textContent = `Extracting brand name with AI...`;
                 
                 const brandName = await extractBrandNameWithGemini(profileName);
-                console.log('Gemini extracted brand name:', brandName);
+                console.log('✅ Step 3: Gemini extracted brand name:', brandName);
 
                 // Step 3: Fetch ad statistics using AI-extracted brand name
                 document.getElementById('loadingText').textContent = `Fetching ad data for ${brandName}...`;
-                console.log('Step 3: Fetching ad data for:', brandName);
+                console.log('✅ Step 4: Fetching ad data for:', brandName);
+                
                 const adData = await fetchAdData(brandName);
+                console.log('✅ Step 5: Ad data received:', adData);
 
                 // Display results
+                console.log('✅ Step 6: Displaying results...');
                 displayResults(instagramData, adData, brandName, username);
 
             } catch (error) {
@@ -546,19 +549,34 @@ Return ONLY the brand name, nothing else. No explanations.`;
         }
 
         async function fetchAdData(brandName) {
-            const response = await fetch(`https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`);
+            const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`;
+            console.log('📡 Fetching ads from:', url);
+            
+            const response = await fetch(url);
             
             if (!response.ok) {
+                console.error('❌ BrandBooster API failed:', response.status);
                 throw new Error(`Failed to fetch ad data (Status: ${response.status})`);
             }
 
             const data = await response.json();
-            console.log('BrandBooster Response:', data);
+            console.log('📊 BrandBooster Response:', data);
+            
+            // Validate data structure
+            if (!data.total_ad_count && data.total_ad_count !== 0) {
+                console.warn('⚠️ Unexpected data structure:', data);
+            }
             
             return data;
         }
 
         function displayResults(instagramData, adData, brandName, username) {
+            console.log('🎨 Displaying results with data:', {
+                instagram: instagramData,
+                ads: adData,
+                brand: brandName
+            });
+            
             // Display Instagram profile
             document.getElementById('profilePic').src = instagramData.profile_pic_url_hd || instagramData.profile_pic_url || 'https://via.placeholder.com/80';
             document.getElementById('fullName').textContent = instagramData.full_name || username;
@@ -570,13 +588,20 @@ Return ONLY the brand name, nothing else. No explanations.`;
             // Display AI-extracted brand name
             document.getElementById('brandName').textContent = brandName;
 
-            // Display ad statistics
-            document.getElementById('totalAds').textContent = formatNumber(adData.total_ad_count || 0);
-            document.getElementById('activeAds').textContent = formatNumber(adData.active_ad_count || 0);
-            document.getElementById('inactiveAds').textContent = formatNumber(adData.inactive_ad_count || 0);
+            // Display ad statistics with validation
+            const totalAds = adData?.total_ad_count || 0;
+            const activeAds = adData?.active_ad_count || 0;
+            const inactiveAds = adData?.inactive_ad_count || 0;
+            
+            console.log('📊 Setting ad counts:', { totalAds, activeAds, inactiveAds });
+            
+            document.getElementById('totalAds').textContent = formatNumber(totalAds);
+            document.getElementById('activeAds').textContent = formatNumber(activeAds);
+            document.getElementById('inactiveAds').textContent = formatNumber(inactiveAds);
 
             // Show result
             document.getElementById('result').classList.add('active');
+            console.log('✅ Display complete!');
         }
 
         function showError(message) {
