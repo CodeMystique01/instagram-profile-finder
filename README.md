@@ -1,6 +1,6 @@
-# 📸 Instagram Profile Finder
+# 🚀 Brand Ad Analytics
 
-A modern, secure web app to search and view Instagram profiles with **real-time data** using a Node.js backend API.
+A modern web app to discover advertising statistics for any brand using the **BrandBooster API**.
 
 ## 🎯 Live Demo
 
@@ -39,30 +39,25 @@ Try it now: [Your Vercel URL here after deployment]
 
 ## ✨ Features
 
-- 🎨 **Beautiful UI** - Gradient design with smooth animations
+- 🎨 **Beautiful UI** - Modern gradient design with smooth animations
 - 📱 **Fully Responsive** - Works on all devices
-- 🔒 **Secure Backend** - API key hidden from users
-- 🔍 **Real Data** - Fetches live Instagram profiles
-- 📊 **Profile Stats** - Posts, followers, following counts
-- 🖼️ **Profile Display** - Picture, bio, and more
-- ⚡ **Fast & Modern** - Serverless backend
-- 🎯 **Demo Fallback** - Works even if API is down
-- 🔗 **Direct Links** - View profiles on Instagram
+- 📊 **Real-Time Data** - Fetches live brand advertising statistics
+- 🚀 **BrandBooster API** - Powered by professional ad analytics
+- ⚡ **Lightning Fast** - Instant results
+- 🆓 **Completely Free** - No API keys or subscriptions needed
+- 🔍 **Any Brand** - Search Nike, Adidas, Apple, Tesla, and more
+- 📈 **Ad Insights** - Total, active, and inactive ad counts
 
 ## How to Use
 
 1. **Open the website**: Simply open `index.html` in your web browser
-2. **Enter username**: Type any Instagram username (e.g., "therock")
+2. **Enter brand name**: Type any brand name (e.g., "Nike", "Adidas", "Apple")
 3. **Click Search**: Hit the search button or press Enter
-4. **View results**: See the profile details including:
-   - Profile picture
-   - Full name
-   - Username
-   - Post count
-   - Followers count
-   - Following count
-   - Biography
-   - Link to view on Instagram
+4. **View results**: See the advertising statistics including:
+   - Total Ads Count
+   - Active Ads Count
+   - Inactive Ads Count
+   - Real-time data from BrandBooster API
 
 ## 🚀 Quick Start
 
