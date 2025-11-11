@@ -314,6 +314,18 @@
             color: #555;
         }
 
+        .no-ads {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 230, 230, 0.9);
+            border: 1px solid rgba(204, 51, 51, 0.25);
+            border-radius: 10px;
+            color: #b22;
+            display: none;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 25px;
@@ -413,6 +425,10 @@
                     </div>
                 </div>
 
+                <div class="no-ads" id="noAdsNotice">
+                    ⚠️ We couldn't find any ad data for this brand yet. Try a related brand name or check back later.
+                </div>
+
                 <div class="info">
                     🤖 Powered by <strong>Gemini AI</strong> • 📊 Ad data from <strong>BrandBooster API</strong> • 📱 Profile from <strong>Instagram</strong>
                 </div>
@@ -465,27 +481,44 @@
                 const profileName = instagramData.full_name || username;
                 console.log('✅ Step 2: Instagram profile name:', profileName);
                 
-                // Step 3: Fetch ad data using profile name directly
-                document.getElementById('loadingText').textContent = `Fetching ad data for ${profileName}...`;
-                console.log('✅ Step 3: Fetching ad data for:', profileName);
+                // Step 3: Build brand variations and fetch ad data
+                document.getElementById('loadingText').textContent = `Finding best brand match...`;
+                const brandVariations = generateBrandVariations(profileName, username);
                 
-                let adData = await fetchAdData(profileName);
-                console.log('✅ Step 4: Ad data received:', adData);
+                // Try Gemini AI extraction too
+                const aiBrandName = await extractBrandNameWithGemini(profileName);
+                if (aiBrandName) {
+                    brandVariations.unshift(aiBrandName);
+                }
                 
-                // If no ads found with full name, try just first word
-                if (adData && adData.total_ad_count === 0 && profileName.includes(' ')) {
-                    const brandNameOnly = profileName.split(' ')[0]; // e.g., "Amazon" from "Amazon India"
-                    console.log('⚠️ No ads found, trying:', brandNameOnly);
-                    const alternateData = await fetchAdData(brandNameOnly);
-                    if (alternateData && alternateData.total_ad_count > 0) {
-                        adData = alternateData;
-                        console.log('✅ Found ads with:', brandNameOnly, alternateData);
+                console.log('✅ Brand name variations to try:', brandVariations);
+                
+                let adData = null;
+                let usedBrandName = profileName;
+                
+                for (const brandCandidate of brandVariations) {
+                    document.getElementById('loadingText').textContent = `Fetching ad data for ${brandCandidate}...`;
+                    console.log('📡 Trying BrandBooster with:', brandCandidate);
+                    const candidateData = await fetchAdData(brandCandidate);
+                    
+                    if (!adData) {
+                        adData = candidateData;
+                        usedBrandName = brandCandidate;
+                    }
+                    
+                    if (candidateData && candidateData.total_ad_count > 0) {
+                        adData = candidateData;
+                        usedBrandName = brandCandidate;
+                        console.log('✅ Found ads for:', brandCandidate, candidateData);
+                        break;
+                    } else {
+                        console.log('⚠️ No ads found for:', brandCandidate);
                     }
                 }
 
                 // Display results
-                console.log('✅ Step 5: Displaying results with data:', adData);
-                displayResults(instagramData, adData, profileName, username);
+                console.log('✅ Step 5: Displaying results with data:', adData, 'Brand used:', usedBrandName);
+                displayResults(instagramData, adData, usedBrandName, username);
 
             } catch (error) {
                 console.error('Error:', error);
@@ -619,6 +652,53 @@ Return ONLY the brand name, nothing else. No explanations.`;
             }
         }
 
+        function generateBrandVariations(profileName, username) {
+            const variations = new Set();
+            const add = (value) => {
+                if (value && typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (trimmed) {
+                        variations.add(trimmed);
+                    }
+                }
+            };
+
+            const titleCase = (str) =>
+                str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+
+            const normalizedProfile = profileName || '';
+            const normalizedUsername = username || '';
+            const cleanUsername = normalizedUsername.replace(/[_\.]/g, ' ');
+
+            add(normalizedProfile);
+            add(titleCase(normalizedProfile));
+            add(normalizedProfile.toLowerCase());
+            add(normalizedProfile.toUpperCase());
+
+            add(cleanUsername);
+            add(titleCase(cleanUsername));
+            add(cleanUsername.toLowerCase());
+            add(cleanUsername.toUpperCase());
+
+            add(normalizedUsername);
+            add(normalizedUsername.toLowerCase());
+            add(normalizedUsername.toUpperCase());
+            add(normalizedUsername.replace(/[_\.]/g, ''));
+
+            const firstWordProfile = normalizedProfile.split(/\s+/)[0];
+            const firstWordUsername = cleanUsername.split(/\s+/)[0];
+
+            add(firstWordProfile);
+            add(firstWordProfile?.toLowerCase());
+            add(firstWordProfile?.toUpperCase());
+
+            add(firstWordUsername);
+            add(firstWordUsername?.toLowerCase());
+            add(firstWordUsername?.toUpperCase());
+
+            return Array.from(variations);
+        }
+
         function displayResults(instagramData, adData, brandName, username) {
             console.log('🎨 Displaying results with data:', {
                 instagram: instagramData,
@@ -659,6 +739,13 @@ Return ONLY the brand name, nothing else. No explanations.`;
             console.log('✅ Rendered Total Ads text:', document.getElementById('totalAds').textContent);
             console.log('✅ Rendered Active Ads text:', document.getElementById('activeAds').textContent);
             console.log('✅ Rendered Inactive Ads text:', document.getElementById('inactiveAds').textContent);
+
+            const noAdsNotice = document.getElementById('noAdsNotice');
+            if (totalAds > 0 || activeAds > 0 || inactiveAds > 0) {
+                noAdsNotice.style.display = 'none';
+            } else {
+                noAdsNotice.style.display = 'block';
+            }
 
             // Show result
             document.getElementById('result').classList.add('active');
