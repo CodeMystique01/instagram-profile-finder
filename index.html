@@ -421,11 +421,22 @@
                 document.getElementById('loadingText').textContent = `Fetching ad data for ${profileName}...`;
                 console.log('✅ Step 3: Fetching ad data for:', profileName);
                 
-                const adData = await fetchAdData(profileName);
+                let adData = await fetchAdData(profileName);
                 console.log('✅ Step 4: Ad data received:', adData);
+                
+                // If no ads found with full name, try just first word
+                if (adData && adData.total_ad_count === 0 && profileName.includes(' ')) {
+                    const brandNameOnly = profileName.split(' ')[0]; // e.g., "Amazon" from "Amazon India"
+                    console.log('⚠️ No ads found, trying:', brandNameOnly);
+                    const alternateData = await fetchAdData(brandNameOnly);
+                    if (alternateData && alternateData.total_ad_count > 0) {
+                        adData = alternateData;
+                        console.log('✅ Found ads with:', brandNameOnly, alternateData);
+                    }
+                }
 
                 // Display results
-                console.log('✅ Step 5: Displaying results...');
+                console.log('✅ Step 5: Displaying results with data:', adData);
                 displayResults(instagramData, adData, profileName, username);
 
             } catch (error) {
