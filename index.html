@@ -413,19 +413,18 @@
                     throw new Error('Could not fetch Instagram profile');
                 }
 
-                // Extract brand name from Instagram profile
-                const brandName = instagramData.full_name || username;
-                console.log('Brand name extracted:', brandName);
+                // Use Instagram username for ad search
+                console.log('Using Instagram username for ad search:', username);
 
                 // Update loading message
-                document.getElementById('loadingText').textContent = `Fetching ad data for ${brandName}...`;
+                document.getElementById('loadingText').textContent = `Fetching ad data for @${username}...`;
 
-                // Step 2: Fetch ad statistics
-                console.log('Step 2: Fetching ad data for:', brandName);
-                const adData = await fetchAdData(brandName);
+                // Step 2: Fetch ad statistics using Instagram username
+                console.log('Step 2: Fetching ad data for:', username);
+                const adData = await fetchAdData(username);
 
                 // Display results
-                displayResults(instagramData, adData, brandName);
+                displayResults(instagramData, adData, username);
 
             } catch (error) {
                 console.error('Error:', error);
@@ -492,17 +491,17 @@
             return data;
         }
 
-        function displayResults(instagramData, adData, brandName) {
+        function displayResults(instagramData, adData, username) {
             // Display Instagram profile
             document.getElementById('profilePic').src = instagramData.profile_pic_url_hd || instagramData.profile_pic_url || 'https://via.placeholder.com/80';
-            document.getElementById('fullName').textContent = instagramData.full_name || brandName;
+            document.getElementById('fullName').textContent = instagramData.full_name || username;
             document.getElementById('username').textContent = instagramData.username;
             
             const followerCount = instagramData.edge_followed_by?.count || 0;
             document.getElementById('followers').textContent = `${formatNumber(followerCount)} followers`;
 
-            // Display brand name
-            document.getElementById('brandName').textContent = brandName;
+            // Display Instagram page name (username)
+            document.getElementById('brandName').textContent = '@' + username;
 
             // Display ad statistics
             document.getElementById('totalAds').textContent = formatNumber(adData.total_ad_count || 0);
