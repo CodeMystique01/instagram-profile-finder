@@ -677,24 +677,29 @@
 
             let score = 0;
 
-            if (candidateNorm && profileNorm && candidateNorm === profileNorm) score += 1000;
-            if (candidateNorm && usernameNorm && candidateNorm === usernameNorm) score += 950;
-            if (apiNorm && profileNorm && apiNorm === profileNorm) score += 900;
-            if (apiNorm && usernameNorm && apiNorm === usernameNorm) score += 850;
+            // Ad count bonus - heavily prioritize results with actual ads
+            const total = Number(data?.total_ad_count ?? 0);
+            if (total > 0) {
+                score += 2000; // Big bonus for having ads
+                score += Math.min(500, Math.log10(total + 1) * 100); // Extra bonus based on ad volume
+            } else {
+                score -= 1000; // Heavy penalty for zero ads
+            }
 
-            if (candidateNorm && profileNorm && candidateNorm.startsWith(profileNorm)) score += 120;
-            if (candidateNorm && usernameNorm && candidateNorm.startsWith(usernameNorm)) score += 110;
-            if (candidateNorm && profileNorm && candidateNorm.includes(profileNorm)) score += 80;
-            if (candidateNorm && usernameNorm && candidateNorm.includes(usernameNorm)) score += 70;
+            // Text matching bonuses (lower weight than ad presence)
+            if (candidateNorm && profileNorm && candidateNorm === profileNorm) score += 300;
+            if (candidateNorm && usernameNorm && candidateNorm === usernameNorm) score += 250;
+            if (apiNorm && profileNorm && apiNorm === profileNorm) score += 200;
+            if (apiNorm && usernameNorm && apiNorm === usernameNorm) score += 150;
+
+            if (candidateNorm && profileNorm && candidateNorm.startsWith(profileNorm)) score += 80;
+            if (candidateNorm && usernameNorm && candidateNorm.startsWith(usernameNorm)) score += 70;
+            if (candidateNorm && profileNorm && candidateNorm.includes(profileNorm)) score += 50;
+            if (candidateNorm && usernameNorm && candidateNorm.includes(usernameNorm)) score += 40;
 
             if (apiNorm && candidateNorm && apiNorm === candidateNorm) score += 100;
             if (apiNorm && profileNorm && apiNorm.includes(profileNorm)) score += 60;
             if (apiNorm && usernameNorm && apiNorm.includes(usernameNorm)) score += 50;
-
-            const total = Number(data?.total_ad_count ?? 0);
-            if (total > 0) {
-                score += Math.min(60, Math.log10(total + 1) * 20);
-            }
 
             return score;
         }
@@ -748,10 +753,12 @@
                     const candidateData = await fetchAdData(brandCandidate);
                     
                     const score = computeBrandMatchScore(brandCandidate, candidateData, profileName, username);
+                    const totalAds = Number(candidateData?.total_ad_count ?? 0);
                     const resultEntry = {
                         candidate: brandCandidate,
                         data: candidateData,
-                        score
+                        score,
+                        totalAds
                     };
 
                     candidateResults.push(resultEntry);
@@ -764,8 +771,8 @@
                         bestResult = resultEntry;
                     }
 
-                    if (score >= 900) {
-                        console.log('✅ High-confidence brand match found, stopping search.');
+                    if (score >= 2500 && totalAds > 0) {
+                        console.log('✅ High-confidence brand match with ads found, stopping search.');
                         break;
                     }
                 }
@@ -773,7 +780,7 @@
                 console.log('📚 Candidate results summary:', candidateResults.map((entry) => ({
                     candidate: entry.candidate,
                     score: entry.score,
-                    total: entry.data?.total_ad_count ?? 0,
+                    total: entry.totalAds,
                     api_brand: entry.data?.api_brand_name ?? null
                 })));
 
@@ -965,35 +972,77 @@ Return ONLY the brand name, nothing else. No explanations.`;
             const titleCase = (str) =>
                 str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 
+            const removeDiacritics = (str) => {
+                if (!str) return '';
+                if (typeof str.normalize === 'function') {
+                    return str.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+                }
+                return str;
+            };
+
+            const sanitizeSymbols = (str) => {
+                if (!str && str !== 0) return '';
+                const cleaned = removeDiacritics(String(str))
+                    .replace(/[\u00A9\u00AE\u2122]/g, ' ')
+                    .replace(/[@#]/g, ' ')
+                    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                return cleaned;
+            };
+
+            const collapseText = (str) => sanitizeSymbols(str).replace(/\s+/g, '');
+            const stripNonWord = (str) => removeDiacritics(String(str || '')).replace(/[^a-zA-Z0-9]/g, '');
+
+            const addFamily = (value) => {
+                if (!value && value !== 0) return;
+                const base = String(value);
+                add(base);
+                add(titleCase(base));
+                add(base.toLowerCase());
+                add(base.toUpperCase());
+
+                const sanitized = sanitizeSymbols(base);
+                if (sanitized && sanitized !== base) {
+                    add(sanitized);
+                    add(titleCase(sanitized));
+                    add(sanitized.toLowerCase());
+                    add(sanitized.toUpperCase());
+                }
+
+                const collapsed = collapseText(base);
+                if (collapsed) {
+                    add(collapsed);
+                }
+
+                const stripped = stripNonWord(base);
+                if (stripped) {
+                    add(stripped);
+                }
+            };
+
+            const addFirstWordFamily = (value) => {
+                if (!value) return;
+                const sanitized = sanitizeSymbols(value);
+                if (!sanitized) return;
+                const firstWord = sanitized.split(/\s+/)[0];
+                if (firstWord) {
+                    addFamily(firstWord);
+                }
+            };
+
             const normalizedProfile = profileName || '';
             const normalizedUsername = username || '';
             const cleanUsername = normalizedUsername.replace(/[_\.]/g, ' ');
 
-            add(normalizedProfile);
-            add(titleCase(normalizedProfile));
-            add(normalizedProfile.toLowerCase());
-            add(normalizedProfile.toUpperCase());
-
-            add(cleanUsername);
-            add(titleCase(cleanUsername));
-            add(cleanUsername.toLowerCase());
-            add(cleanUsername.toUpperCase());
-
-            add(normalizedUsername);
-            add(normalizedUsername.toLowerCase());
-            add(normalizedUsername.toUpperCase());
+            addFamily(normalizedProfile);
+            addFamily(cleanUsername);
+            addFamily(normalizedUsername);
             add(normalizedUsername.replace(/[_\.]/g, ''));
 
-            const firstWordProfile = normalizedProfile.split(/\s+/)[0];
-            const firstWordUsername = cleanUsername.split(/\s+/)[0];
-
-            add(firstWordProfile);
-            add(firstWordProfile?.toLowerCase());
-            add(firstWordProfile?.toUpperCase());
-
-            add(firstWordUsername);
-            add(firstWordUsername?.toLowerCase());
-            add(firstWordUsername?.toUpperCase());
+            addFirstWordFamily(normalizedProfile);
+            addFirstWordFamily(cleanUsername);
+            addFirstWordFamily(normalizedUsername);
 
             return Array.from(variations);
         }
