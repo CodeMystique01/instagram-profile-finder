@@ -445,12 +445,206 @@
         });
 
         function formatNumber(num) {
+            if (!Number.isFinite(num)) {
+                return '0';
+            }
             if (num >= 1000000) {
                 return (num / 1000000).toFixed(1) + 'M';
             } else if (num >= 1000) {
                 return (num / 1000).toFixed(1) + 'K';
             }
             return num.toLocaleString();
+        }
+
+        function parseNumericValue(value) {
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            if (typeof value === 'number') {
+                return Number.isFinite(value) ? value : null;
+            }
+
+            if (typeof value === 'object' && 'count' in value) {
+                return parseNumericValue(value.count);
+            }
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim().toLowerCase();
+                if (!trimmed) {
+                    return null;
+                }
+
+                let multiplier = 1;
+                if (/k$/.test(trimmed)) {
+                    multiplier = 1000;
+                } else if (/m$/.test(trimmed)) {
+                    multiplier = 1000000;
+                } else if (/b$/.test(trimmed)) {
+                    multiplier = 1000000000;
+                }
+
+                const sanitized = trimmed
+                    .replace(/[^\d.,-]/g, '')
+                    .replace(/,/g, '');
+
+                if (!sanitized) {
+                    return null;
+                }
+
+                const parsed = parseFloat(sanitized);
+                if (!Number.isFinite(parsed)) {
+                    return null;
+                }
+
+                return parsed * multiplier;
+            }
+
+            return null;
+        }
+
+        function pickFirstNumeric(containers, keys) {
+            for (const container of containers) {
+                if (!container || typeof container !== 'object') continue;
+
+                for (const key of keys) {
+                    if (!(key in container)) continue;
+                    const parsed = parseNumericValue(container[key]);
+                    if (parsed !== null) {
+                        return parsed;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function collectContainers(value, list, visited) {
+            if (!value || typeof value !== 'object') {
+                return;
+            }
+
+            if (visited.has(value)) {
+                return;
+            }
+
+            visited.add(value);
+            list.push(value);
+
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    collectContainers(item, list, visited);
+                }
+                return;
+            }
+
+            for (const key of Object.keys(value)) {
+                collectContainers(value[key], list, visited);
+            }
+        }
+
+        function gatherContainers(root) {
+            const list = [];
+            collectContainers(root, list, new Set());
+            return list;
+        }
+
+        function createZeroAdCounts() {
+            return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
+        }
+
+        function extractBrandNameFromResponse(rawData) {
+            const containers = gatherContainers(rawData);
+            const keys = [
+                'brand_name',
+                'brand',
+                'brandName',
+                'brand_display_name',
+                'name',
+                'title',
+                'label'
+            ];
+
+            for (const container of containers) {
+                if (!container || typeof container !== 'object') continue;
+                for (const key of keys) {
+                    if (!(key in container)) continue;
+                    const value = container[key];
+                    if (typeof value === 'string' && value.trim()) {
+                        return value.trim();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        function normalizeAdCounts(rawData) {
+            if (!rawData || typeof rawData !== 'object') {
+                return createZeroAdCounts();
+            }
+
+            const containers = gatherContainers(rawData);
+
+            const total = pickFirstNumeric(containers, [
+                'total_ad_count',
+                'total_ads_count',
+                'total_ads',
+                'totalAds',
+                'ads_total',
+                'total',
+                'overall',
+                'count'
+            ]);
+
+            const active = pickFirstNumeric(containers, [
+                'active_ad_count',
+                'active_ads_count',
+                'active_ads',
+                'activeAds',
+                'running_ad_count',
+                'running_ads',
+                'live_ad_count',
+                'live_ads',
+                'active'
+            ]);
+
+            const inactive = pickFirstNumeric(containers, [
+                'inactive_ad_count',
+                'inactive_ads_count',
+                'inactive_ads',
+                'inactiveAds',
+                'paused_ad_count',
+                'paused_ads',
+                'ended_ad_count',
+                'ended_ads',
+                'inactive',
+                'paused'
+            ]);
+
+            const counts = createZeroAdCounts();
+            const brandName = extractBrandNameFromResponse(rawData);
+
+            if (total !== null) counts.total_ad_count = total;
+            if (active !== null) counts.active_ad_count = active;
+            if (inactive !== null) counts.inactive_ad_count = inactive;
+
+            if (!counts.total_ad_count && counts.active_ad_count && counts.inactive_ad_count) {
+                counts.total_ad_count = counts.active_ad_count + counts.inactive_ad_count;
+            }
+
+            if (counts.total_ad_count && counts.active_ad_count && !counts.inactive_ad_count) {
+                counts.inactive_ad_count = Math.max(counts.total_ad_count - counts.active_ad_count, 0);
+            }
+
+            if (counts.total_ad_count && counts.inactive_ad_count && !counts.active_ad_count) {
+                counts.active_ad_count = Math.max(counts.total_ad_count - counts.inactive_ad_count, 0);
+            }
+
+            if (brandName) {
+                counts.brand_name = brandName;
+            }
+
+            return counts;
         }
 
         async function searchProfile() {
@@ -503,12 +697,12 @@
                     
                     if (!adData) {
                         adData = candidateData;
-                        usedBrandName = brandCandidate;
+                        usedBrandName = candidateData?.brand_name || brandCandidate;
                     }
                     
                     if (candidateData && candidateData.total_ad_count > 0) {
                         adData = candidateData;
-                        usedBrandName = brandCandidate;
+                        usedBrandName = candidateData.brand_name || brandCandidate;
                         console.log('✅ Found ads for:', brandCandidate, candidateData);
                         break;
                     } else {
@@ -635,20 +829,14 @@ Return ONLY the brand name, nothing else. No explanations.`;
                 const data = await response.json();
                 console.log('📊 BrandBooster raw response:', JSON.stringify(data));
                 
-                // Ensure data has the expected structure
-                const result = {
-                    total_ad_count: Number(data.total_ad_count ?? 0),
-                    active_ad_count: Number(data.active_ad_count ?? 0),
-                    inactive_ad_count: Number(data.inactive_ad_count ?? 0)
-                };
-                
-                console.log('📊 Processed ad data:', result);
-                return result;
+                const normalized = normalizeAdCounts(data);
+                console.log('📊 Normalized ad data:', normalized);
+                return normalized;
                 
             } catch (error) {
                 console.error('❌ Error fetching ad data:', error);
                 // Return zero data on error
-                return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
+                return createZeroAdCounts();
             }
         }
 
