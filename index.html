@@ -548,8 +548,16 @@
             return list;
         }
 
-        function createZeroAdCounts() {
-            return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
+        function createZeroAdCounts(overrides = {}) {
+            return Object.assign({
+                total_ad_count: 0,
+                active_ad_count: 0,
+                inactive_ad_count: 0,
+                queried_brand: null,
+                api_brand_name: null,
+                display_brand_name: null,
+                source: 'brandbooster'
+            }, overrides);
         }
 
         function extractBrandNameFromResponse(rawData) {
@@ -641,10 +649,54 @@
             }
 
             if (brandName) {
-                counts.brand_name = brandName;
+                counts.api_brand_name = brandName;
+                counts.display_brand_name = brandName;
             }
 
             return counts;
+        }
+
+        function normalizeForComparison(value) {
+            if (!value && value !== 0) {
+                return '';
+            }
+
+            return String(value)
+                .toLowerCase()
+                .replace(/[@#]+/g, '')
+                .replace(/&amp;/g, 'and')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function computeBrandMatchScore(candidate, data, profileName, username) {
+            const candidateNorm = normalizeForComparison(candidate);
+            const profileNorm = normalizeForComparison(profileName);
+            const usernameNorm = normalizeForComparison(username);
+            const apiNorm = normalizeForComparison(data?.api_brand_name);
+
+            let score = 0;
+
+            if (candidateNorm && profileNorm && candidateNorm === profileNorm) score += 1000;
+            if (candidateNorm && usernameNorm && candidateNorm === usernameNorm) score += 950;
+            if (apiNorm && profileNorm && apiNorm === profileNorm) score += 900;
+            if (apiNorm && usernameNorm && apiNorm === usernameNorm) score += 850;
+
+            if (candidateNorm && profileNorm && candidateNorm.startsWith(profileNorm)) score += 120;
+            if (candidateNorm && usernameNorm && candidateNorm.startsWith(usernameNorm)) score += 110;
+            if (candidateNorm && profileNorm && candidateNorm.includes(profileNorm)) score += 80;
+            if (candidateNorm && usernameNorm && candidateNorm.includes(usernameNorm)) score += 70;
+
+            if (apiNorm && candidateNorm && apiNorm === candidateNorm) score += 100;
+            if (apiNorm && profileNorm && apiNorm.includes(profileNorm)) score += 60;
+            if (apiNorm && usernameNorm && apiNorm.includes(usernameNorm)) score += 50;
+
+            const total = Number(data?.total_ad_count ?? 0);
+            if (total > 0) {
+                score += Math.min(60, Math.log10(total + 1) * 20);
+            }
+
+            return score;
         }
 
         async function searchProfile() {
@@ -687,28 +739,61 @@
                 
                 console.log('✅ Brand name variations to try:', brandVariations);
                 
-                let adData = null;
-                let usedBrandName = profileName;
+                const candidateResults = [];
+                let bestResult = null;
                 
                 for (const brandCandidate of brandVariations) {
                     document.getElementById('loadingText').textContent = `Fetching ad data for ${brandCandidate}...`;
                     console.log('📡 Trying BrandBooster with:', brandCandidate);
                     const candidateData = await fetchAdData(brandCandidate);
                     
-                    if (!adData) {
-                        adData = candidateData;
-                        usedBrandName = candidateData?.brand_name || brandCandidate;
+                    const score = computeBrandMatchScore(brandCandidate, candidateData, profileName, username);
+                    const resultEntry = {
+                        candidate: brandCandidate,
+                        data: candidateData,
+                        score
+                    };
+
+                    candidateResults.push(resultEntry);
+                    console.log('🔍 Candidate score:', brandCandidate, score, candidateData);
+
+                    if (!bestResult || score > bestResult.score || (
+                        score === bestResult.score &&
+                        Number(candidateData?.total_ad_count ?? 0) > Number(bestResult.data?.total_ad_count ?? 0)
+                    )) {
+                        bestResult = resultEntry;
                     }
-                    
-                    if (candidateData && candidateData.total_ad_count > 0) {
-                        adData = candidateData;
-                        usedBrandName = candidateData.brand_name || brandCandidate;
-                        console.log('✅ Found ads for:', brandCandidate, candidateData);
+
+                    if (score >= 900) {
+                        console.log('✅ High-confidence brand match found, stopping search.');
                         break;
-                    } else {
-                        console.log('⚠️ No ads found for:', brandCandidate);
                     }
                 }
+
+                console.log('📚 Candidate results summary:', candidateResults.map((entry) => ({
+                    candidate: entry.candidate,
+                    score: entry.score,
+                    total: entry.data?.total_ad_count ?? 0,
+                    api_brand: entry.data?.api_brand_name ?? null
+                })));
+
+                if (!bestResult) {
+                    bestResult = {
+                        candidate: profileName,
+                        score: 0,
+                        data: createZeroAdCounts({
+                            queried_brand: profileName,
+                            display_brand_name: profileName
+                        })
+                    };
+                }
+
+                const adData = bestResult.data || createZeroAdCounts({
+                    queried_brand: bestResult.candidate,
+                    display_brand_name: bestResult.candidate
+                });
+
+                const usedBrandName = adData.display_brand_name || bestResult.candidate || profileName;
 
                 // Display results
                 console.log('✅ Step 5: Displaying results with data:', adData, 'Brand used:', usedBrandName);
@@ -823,20 +908,46 @@ Return ONLY the brand name, nothing else. No explanations.`;
                 if (!response.ok) {
                     console.error('❌ API returned error status:', response.status);
                     // Return zero data instead of throwing
-                    return { total_ad_count: 0, active_ad_count: 0, inactive_ad_count: 0 };
+                    return createZeroAdCounts({
+                        queried_brand: brandName,
+                        display_brand_name: brandName
+                    });
                 }
 
                 const data = await response.json();
                 console.log('📊 BrandBooster raw response:', JSON.stringify(data));
                 
                 const normalized = normalizeAdCounts(data);
+                normalized.queried_brand = brandName;
+
+                if (normalized.api_brand_name && normalizeForComparison(normalized.api_brand_name) !== normalizeForComparison(brandName)) {
+                    normalized.alternative_brand_name = normalized.api_brand_name;
+                }
+
+                const preferredDisplay = (() => {
+                    const apiName = normalized.api_brand_name;
+                    const queryName = brandName;
+                    if (apiName && normalizeForComparison(apiName) === normalizeForComparison(queryName)) {
+                        return apiName;
+                    }
+                    if (queryName && queryName.trim()) {
+                        return queryName;
+                    }
+                    return apiName || normalized.display_brand_name || queryName;
+                })();
+
+                normalized.display_brand_name = preferredDisplay;
+
                 console.log('📊 Normalized ad data:', normalized);
                 return normalized;
                 
             } catch (error) {
                 console.error('❌ Error fetching ad data:', error);
                 // Return zero data on error
-                return createZeroAdCounts();
+                return createZeroAdCounts({
+                    queried_brand: brandName,
+                    display_brand_name: brandName
+                });
             }
         }
 
