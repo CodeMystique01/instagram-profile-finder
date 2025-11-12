@@ -906,7 +906,16 @@ Return ONLY the brand name, nothing else. No explanations.`;
 
         async function fetchAdData(brandName) {
             try {
-                const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`;
+                // Clean brand name: remove all special symbols (®, ©, ™, etc.) before API call
+                const cleanedBrandName = brandName
+                    .replace(/[\u00A9\u00AE\u2122]/g, '')  // Remove ©, ®, ™
+                    .replace(/[^\w\s-]/g, '')               // Remove all special chars except word chars, spaces, hyphens
+                    .replace(/\s+/g, ' ')                   // Normalize whitespace
+                    .trim();
+                
+                const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(cleanedBrandName)}`;
+                console.log('📡 Original brand name:', brandName);
+                console.log('📡 Cleaned brand name for API:', cleanedBrandName);
                 console.log('📡 Fetching from URL:', url);
                 
                 const response = await fetch(url);
@@ -925,7 +934,7 @@ Return ONLY the brand name, nothing else. No explanations.`;
                 console.log('📊 BrandBooster raw response:', JSON.stringify(data));
                 
                 const normalized = normalizeAdCounts(data);
-                normalized.queried_brand = brandName;
+                normalized.queried_brand = cleanedBrandName;
 
                 if (normalized.api_brand_name && normalizeForComparison(normalized.api_brand_name) !== normalizeForComparison(brandName)) {
                     normalized.alternative_brand_name = normalized.api_brand_name;
@@ -933,7 +942,7 @@ Return ONLY the brand name, nothing else. No explanations.`;
 
                 const preferredDisplay = (() => {
                     const apiName = normalized.api_brand_name;
-                    const queryName = brandName;
+                    const queryName = cleanedBrandName;
                     if (apiName && normalizeForComparison(apiName) === normalizeForComparison(queryName)) {
                         return apiName;
                     }
@@ -951,9 +960,14 @@ Return ONLY the brand name, nothing else. No explanations.`;
             } catch (error) {
                 console.error('❌ Error fetching ad data:', error);
                 // Return zero data on error
+                const cleanedName = brandName
+                    .replace(/[\u00A9\u00AE\u2122]/g, '')
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
                 return createZeroAdCounts({
-                    queried_brand: brandName,
-                    display_brand_name: brandName
+                    queried_brand: cleanedName,
+                    display_brand_name: cleanedName
                 });
             }
         }
