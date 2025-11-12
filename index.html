@@ -742,6 +742,27 @@
                     brandVariations.unshift(aiBrandName);
                 }
                 
+                // Prioritize simple first-word variations early (e.g., "RYZE" from "ryzesuperfoods")
+                const firstWordSimple = profileName.split(/\s+/)[0];
+                const usernameFirstWord = username.split(/[_\.\s]+/)[0];
+                
+                // Extract first part of compound usernames (e.g., "ryze" from "ryzesuperfoods")
+                const usernameCompoundMatch = username.match(/^([a-z]+)(?=[A-Z]|superfoods|official|brand|shop|store)/i);
+                const compoundFirst = usernameCompoundMatch ? usernameCompoundMatch[1] : null;
+                
+                if (compoundFirst && compoundFirst.length > 2) {
+                    brandVariations.unshift(compoundFirst.charAt(0).toUpperCase() + compoundFirst.slice(1));
+                    brandVariations.unshift(compoundFirst.toUpperCase());
+                }
+                if (firstWordSimple && firstWordSimple.length > 2) {
+                    brandVariations.unshift(firstWordSimple);
+                    brandVariations.unshift(firstWordSimple.toUpperCase());
+                }
+                if (usernameFirstWord && usernameFirstWord.length > 2 && usernameFirstWord !== firstWordSimple) {
+                    brandVariations.unshift(usernameFirstWord);
+                    brandVariations.unshift(usernameFirstWord.toUpperCase());
+                }
+                
                 console.log('✅ Brand name variations to try:', brandVariations);
                 
                 const candidateResults = [];
