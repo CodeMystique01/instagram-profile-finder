@@ -591,45 +591,60 @@
                 return createZeroAdCounts();
             }
 
-            const containers = gatherContainers(rawData);
-
-            const total = pickFirstNumeric(containers, [
-                'total_ad_count',
-                'total_ads_count',
-                'total_ads',
-                'totalAds',
-                'ads_total',
-                'total',
-                'overall',
-                'count'
-            ]);
-
-            const active = pickFirstNumeric(containers, [
-                'active_ad_count',
-                'active_ads_count',
-                'active_ads',
-                'activeAds',
-                'running_ad_count',
-                'running_ads',
-                'live_ad_count',
-                'live_ads',
-                'active'
-            ]);
-
-            const inactive = pickFirstNumeric(containers, [
-                'inactive_ad_count',
-                'inactive_ads_count',
-                'inactive_ads',
-                'inactiveAds',
-                'paused_ad_count',
-                'paused_ads',
-                'ended_ad_count',
-                'ended_ads',
-                'inactive',
-                'paused'
-            ]);
-
             const counts = createZeroAdCounts();
+            
+            // PRIORITY 1: Try direct field access first (for BrandBooster API format)
+            let total = parseNumericValue(rawData.total_ad_count);
+            let active = parseNumericValue(rawData.active_ad_count);
+            let inactive = parseNumericValue(rawData.inactive_ad_count);
+            
+            // PRIORITY 2: If direct access failed, try nested search
+            if (total === null || active === null || inactive === null) {
+                const containers = gatherContainers(rawData);
+
+                if (total === null) {
+                    total = pickFirstNumeric(containers, [
+                        'total_ad_count',
+                        'total_ads_count',
+                        'total_ads',
+                        'totalAds',
+                        'ads_total',
+                        'total',
+                        'overall',
+                        'count'
+                    ]);
+                }
+
+                if (active === null) {
+                    active = pickFirstNumeric(containers, [
+                        'active_ad_count',
+                        'active_ads_count',
+                        'active_ads',
+                        'activeAds',
+                        'running_ad_count',
+                        'running_ads',
+                        'live_ad_count',
+                        'live_ads',
+                        'active'
+                    ]);
+                }
+
+                if (inactive === null) {
+                    inactive = pickFirstNumeric(containers, [
+                        'inactive_ad_count',
+                        'inactive_ads_count',
+                        'inactive_ads',
+                        'inactiveAds',
+                        'paused_ad_count',
+                        'paused_ads',
+                        'ended_ad_count',
+                        'ended_ads',
+                        'inactive',
+                        'paused'
+                    ]);
+                }
+            }
+
             const brandName = extractBrandNameFromResponse(rawData);
 
             if (total !== null) counts.total_ad_count = total;

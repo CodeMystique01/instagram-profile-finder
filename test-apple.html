@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Apple Ads</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            padding: 40px; 
+            max-width: 700px; 
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        button { 
+            padding: 15px 30px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #f5f5f5; 
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .big { 
+            font-size: 48px; 
+            font-weight: bold; 
+            color: #667eea;
+            display: block;
+            margin: 10px 0;
+        }
+        .label {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: white;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .success { color: #22c55e; font-weight: bold; }
+        .loading { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Apple Ads Count</h1>
+        <p>Testing the BrandBooster API for Apple ads</p>
+        
+        <div>
+            <button onclick="testApple()">🍎 Test Apple</button>
+            <button onclick="testNike()">👟 Test Nike</button>
+            <button onclick="testCocaCola()">🥤 Test Coca-Cola</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testBrand(brandName) {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p class="loading">⏳ Fetching data for ' + brandName + '...</p>';
+            
+            try {
+                const url = `https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=${encodeURIComponent(brandName)}`;
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url);
+                console.log('Status:', response.status);
+                
+                const data = await response.json();
+                console.log('Raw API Response:', data);
+                
+                const total = data.total_ad_count || 0;
+                const active = data.active_ad_count || 0;
+                const inactive = data.inactive_ad_count || 0;
+                
+                result.innerHTML = `
+                    <div class="result">
+                        <h2 class="success">✅ Success for "${brandName}"!</h2>
+                        
+                        <div style="text-align: center; margin: 20px 0;">
+                            <div class="label">Total Ads</div>
+                            <span class="big">${total.toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <span><strong>Active Ads:</strong></span>
+                            <span style="color: #22c55e; font-weight: bold;">${active.toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <span><strong>Inactive Ads:</strong></span>
+                            <span style="color: #ef4444; font-weight: bold;">${inactive.toLocaleString()}</span>
+                        </div>
+                        
+                        <details style="margin-top: 20px;">
+                            <summary style="cursor: pointer; font-weight: bold; color: #667eea;">View Raw JSON Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="result" style="border-left-color: #ef4444;">❌ Error: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+        
+        function testApple() {
+            testBrand('Apple');
+        }
+        
+        function testNike() {
+            testBrand('Nike');
+        }
+        
+        function testCocaCola() {
+            testBrand('Coca-Cola');
+        }
+    </script>
+</body>
+</html>
+

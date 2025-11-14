@@ -8,7 +8,8 @@
     "dev": "vercel dev",
     "deploy": "vercel --prod",
     "test": "node test-local.js",
-    "test-key": "node test-my-rapidapi-key.js"
+    "test-key": "node test-my-rapidapi-key.js",
+    "batch": "node batch-process.js"
   },
   "keywords": [
     "instagram",
