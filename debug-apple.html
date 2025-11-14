@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Apple Ads Parsing</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            padding: 20px; 
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .section {
+            background: #2d2d2d;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4ec9b0;
+        }
+        .error { border-left-color: #f48771; }
+        .success { border-left-color: #4ec9b0; }
+        h1 { color: #4ec9b0; }
+        h2 { color: #dcdcaa; font-size: 18px; }
+        .value { color: #ce9178; font-weight: bold; font-size: 24px; }
+        .label { color: #9cdcfe; }
+        pre { 
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 5px;
+            overflow-x: auto;
+            color: #ce9178;
+        }
+        button {
+            background: #4ec9b0;
+            color: #1e1e1e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #6fdfbe;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Apple Ads Parsing</h1>
+    <button onclick="runTest()">▶ Run Test</button>
+    <div id="output"></div>
+
+    <script>
+        function parseNumericValue(value) {
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            if (typeof value === 'number') {
+                return Number.isFinite(value) ? value : null;
+            }
+
+            if (typeof value === 'object' && 'count' in value) {
+                return parseNumericValue(value.count);
+            }
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim().toLowerCase();
+                if (!trimmed) {
+                    return null;
+                }
+
+                let multiplier = 1;
+                if (/k$/.test(trimmed)) {
+                    multiplier = 1000;
+                } else if (/m$/.test(trimmed)) {
+                    multiplier = 1000000;
+                } else if (/b$/.test(trimmed)) {
+                    multiplier = 1000000000;
+                }
+
+                const sanitized = trimmed
+                    .replace(/[^\d.,-]/g, '')
+                    .replace(/,/g, '');
+
+                if (!sanitized) {
+                    return null;
+                }
+
+                const parsed = parseFloat(sanitized);
+                if (!Number.isFinite(parsed)) {
+                    return null;
+                }
+
+                return parsed * multiplier;
+            }
+
+            return null;
+        }
+
+        async function runTest() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div class="section"><h2>⏳ Fetching data from BrandBooster API...</h2></div>';
+            
+            try {
+                const url = 'https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=Apple';
+                
+                const response = await fetch(url);
+                const rawData = await response.json();
+                
+                // Test parsing
+                const total = parseNumericValue(rawData.total_ad_count);
+                const active = parseNumericValue(rawData.active_ad_count);
+                const inactive = parseNumericValue(rawData.inactive_ad_count);
+                
+                output.innerHTML = `
+                    <div class="section success">
+                        <h2>✅ Step 1: Raw API Response</h2>
+                        <pre>${JSON.stringify(rawData, null, 2)}</pre>
+                    </div>
+                    
+                    <div class="section success">
+                        <h2>✅ Step 2: Direct Field Access (typeof check)</h2>
+                        <p><span class="label">rawData.total_ad_count:</span> ${rawData.total_ad_count} (type: ${typeof rawData.total_ad_count})</p>
+                        <p><span class="label">rawData.active_ad_count:</span> ${rawData.active_ad_count} (type: ${typeof rawData.active_ad_count})</p>
+                        <p><span class="label">rawData.inactive_ad_count:</span> ${rawData.inactive_ad_count} (type: ${typeof rawData.inactive_ad_count})</p>
+                    </div>
+                    
+                    <div class="section ${total === 2553 ? 'success' : 'error'}">
+                        <h2>Step 3: After parseNumericValue() Function</h2>
+                        <p><span class="label">Total:</span> <span class="value">${total}</span> ${total === 2553 ? '✅ CORRECT' : '❌ WRONG (should be 2553)'}</p>
+                        <p><span class="label">Active:</span> <span class="value">${active}</span> ${active === 2302 ? '✅ CORRECT' : '❌ WRONG (should be 2302)'}</p>
+                        <p><span class="label">Inactive:</span> <span class="value">${inactive}</span> ${inactive === 251 ? '✅ CORRECT' : '❌ WRONG (should be 251)'}</p>
+                    </div>
+                    
+                    <div class="section ${total === 2553 ? 'success' : 'error'}">
+                        <h2>${total === 2553 ? '✅ TEST PASSED' : '❌ TEST FAILED'}</h2>
+                        <p style="font-size: 18px;">
+                            ${total === 2553 
+                                ? 'The parsing is working correctly! If you still see 4 in the main website, try a hard refresh (Ctrl+Shift+R or Ctrl+F5)' 
+                                : 'There is a parsing error. The parseNumericValue function is not working correctly.'}
+                        </p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `
+                    <div class="section error">
+                        <h2>❌ Error</h2>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-run on load
+        window.onload = runTest;
+    </script>
+</body>
+</html>
+

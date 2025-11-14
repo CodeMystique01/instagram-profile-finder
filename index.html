@@ -594,9 +594,16 @@
             const counts = createZeroAdCounts();
             
             // PRIORITY 1: Try direct field access first (for BrandBooster API format)
+            console.log('🔍 normalizeAdCounts - Raw API data:', rawData);
+            console.log('🔍 Direct field access - total_ad_count:', rawData.total_ad_count, typeof rawData.total_ad_count);
+            console.log('🔍 Direct field access - active_ad_count:', rawData.active_ad_count, typeof rawData.active_ad_count);
+            console.log('🔍 Direct field access - inactive_ad_count:', rawData.inactive_ad_count, typeof rawData.inactive_ad_count);
+            
             let total = parseNumericValue(rawData.total_ad_count);
             let active = parseNumericValue(rawData.active_ad_count);
             let inactive = parseNumericValue(rawData.inactive_ad_count);
+            
+            console.log('🔍 After parseNumericValue - total:', total, 'active:', active, 'inactive:', inactive);
             
             // PRIORITY 2: If direct access failed, try nested search
             if (total === null || active === null || inactive === null) {
@@ -1120,11 +1127,13 @@ Return ONLY the brand name, nothing else. No explanations.`;
             document.getElementById('brandName').textContent = brandName;
 
             // Display ad statistics with validation
+            console.log('📊 displayResults - Received adData:', adData);
             const totalAds = Number(adData?.total_ad_count ?? 0);
             const activeAds = Number(adData?.active_ad_count ?? 0);
             const inactiveAds = Number(adData?.inactive_ad_count ?? 0);
             
             console.log('📊 Setting ad counts:', { totalAds, activeAds, inactiveAds });
+            console.log('⚠️ IF YOU SEE WRONG NUMBERS: Check above logs for where the error occurs!');
             
             document.getElementById('totalAds').textContent = formatNumber(totalAds);
             document.getElementById('activeAds').textContent = formatNumber(activeAds);
