@@ -712,36 +712,35 @@
                 
                 // Step 3: Build brand variations and fetch ad data
                 document.getElementById('loadingText').textContent = `Finding best brand match...`;
-                const brandVariations = generateBrandVariations(profileName, username);
                 
-                // Try Gemini AI extraction too
+                // PRIORITY ORDER: Try most likely variations FIRST
+                const brandVariations = [];
+                
+                // 1. Try username capitalized first (e.g., "Apple" from "apple")
+                const capitalizedUsername = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+                brandVariations.push(capitalizedUsername);
+                
+                // 2. Try username as-is
+                brandVariations.push(username);
+                
+                // 3. Try profile name
+                brandVariations.push(profileName);
+                
+                // 4. Try Gemini AI extraction
                 const aiBrandName = await extractBrandNameWithGemini(profileName);
-                if (aiBrandName) {
-                    brandVariations.unshift(aiBrandName);
+                if (aiBrandName && !brandVariations.includes(aiBrandName)) {
+                    brandVariations.push(aiBrandName);
                 }
                 
-                // Prioritize simple first-word variations early (e.g., "RYZE" from "ryzesuperfoods")
-                const firstWordSimple = profileName.split(/\s+/)[0];
-                const usernameFirstWord = username.split(/[_\.\s]+/)[0];
-                
-                // Extract first part of compound usernames (e.g., "ryze" from "ryzesuperfoods")
-                const usernameCompoundMatch = username.match(/^([a-z]+)(?=[A-Z]|superfoods|official|brand|shop|store)/i);
-                const compoundFirst = usernameCompoundMatch ? usernameCompoundMatch[1] : null;
-                
-                if (compoundFirst && compoundFirst.length > 2) {
-                    brandVariations.unshift(compoundFirst.charAt(0).toUpperCase() + compoundFirst.slice(1));
-                    brandVariations.unshift(compoundFirst.toUpperCase());
-                }
-                if (firstWordSimple && firstWordSimple.length > 2) {
-                    brandVariations.unshift(firstWordSimple);
-                    brandVariations.unshift(firstWordSimple.toUpperCase());
-                }
-                if (usernameFirstWord && usernameFirstWord.length > 2 && usernameFirstWord !== firstWordSimple) {
-                    brandVariations.unshift(usernameFirstWord);
-                    brandVariations.unshift(usernameFirstWord.toUpperCase());
+                // 5. Add other variations
+                const otherVariations = generateBrandVariations(profileName, username);
+                for (const variation of otherVariations) {
+                    if (!brandVariations.includes(variation)) {
+                        brandVariations.push(variation);
+                    }
                 }
                 
-                console.log('✅ Brand name variations to try:', brandVariations);
+                console.log('✅ Brand name variations to try (in order):', brandVariations);
                 
                 const candidateResults = [];
                 let bestResult = null;
@@ -761,17 +760,18 @@
                     };
 
                     candidateResults.push(resultEntry);
-                    console.log('🔍 Candidate score:', brandCandidate, score, candidateData);
+                    console.log('🔍 Candidate:', brandCandidate, '| Ads:', totalAds, '| Score:', score);
+                    console.log('🔍 Data:', candidateData);
 
-                    if (!bestResult || score > bestResult.score || (
-                        score === bestResult.score &&
-                        Number(candidateData?.total_ad_count ?? 0) > Number(bestResult.data?.total_ad_count ?? 0)
-                    )) {
+                    // PRIORITY: Pick the result with MOST ads (not highest score)
+                    if (!bestResult || totalAds > bestResult.totalAds) {
+                        console.log('✅ New best result! Brand:', brandCandidate, 'Ads:', totalAds);
                         bestResult = resultEntry;
                     }
 
-                    if (score >= 2500 && totalAds > 0) {
-                        console.log('✅ High-confidence brand match with ads found, stopping search.');
+                    // Stop if we found a result with many ads
+                    if (totalAds > 100) {
+                        console.log('✅ Found result with many ads, stopping search.');
                         break;
                     }
                 }
@@ -802,7 +802,13 @@
                 const usedBrandName = adData.display_brand_name || bestResult.candidate || profileName;
 
                 // Display results
-                console.log('✅ Step 5: Displaying results with data:', adData, 'Brand used:', usedBrandName);
+                console.log('═══════════════════════════════════════');
+                console.log('✅ FINAL RESULT:');
+                console.log('   Brand used:', usedBrandName);
+                console.log('   Total Ads:', adData.total_ad_count);
+                console.log('   Active Ads:', adData.active_ad_count);
+                console.log('   Inactive Ads:', adData.inactive_ad_count);
+                console.log('═══════════════════════════════════════');
                 displayResults(instagramData, adData, usedBrandName, username);
 
             } catch (error) {
