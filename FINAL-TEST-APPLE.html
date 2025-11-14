@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FINAL TEST - Apple Ads</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            padding: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+        .big-number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .label {
+            font-size: 18px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .stat {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat-label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .success {
+            color: #22c55e;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🍎 Apple Ads Test</h1>
+        <p class="label">Final Test with Simplified Code</p>
+        
+        <button onclick="testApple()">▶ Run Test</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function testApple() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>⏳ Loading...</p>';
+            
+            fetch('https://api.brandbooster.ai/api/v1/research/brand-ads-count-public?brand_name=Apple')
+                .then(response => response.json())
+                .then(rawData => {
+                    console.log('Raw API Response:', rawData);
+                    
+                    // Use the EXACT same logic as the fixed code
+                    let total = 0;
+                    let active = 0;
+                    let inactive = 0;
+                    
+                    if ('total_ad_count' in rawData && typeof rawData.total_ad_count === 'number') {
+                        total = rawData.total_ad_count;
+                    }
+                    
+                    if ('active_ad_count' in rawData && typeof rawData.active_ad_count === 'number') {
+                        active = rawData.active_ad_count;
+                    }
+                    
+                    if ('inactive_ad_count' in rawData && typeof rawData.inactive_ad_count === 'number') {
+                        inactive = rawData.inactive_ad_count;
+                    }
+                    
+                    console.log('Parsed values:', { total, active, inactive });
+                    
+                    const isCorrect = total === 2553 && active === 2302 && inactive === 251;
+                    
+                    result.innerHTML = `
+                        <div class="big-number">${total.toLocaleString()}</div>
+                        <div class="label">Total Apple Ads</div>
+                        
+                        <div class="stat">
+                            <span class="stat-label">Active Ads</span>
+                            <span class="stat-value">${active.toLocaleString()}</span>
+                        </div>
+                        
+                        <div class="stat">
+                            <span class="stat-label">Inactive Ads</span>
+                            <span class="stat-value">${inactive.toLocaleString()}</span>
+                        </div>
+                        
+                        <p class="${isCorrect ? 'success' : 'error'}" style="margin-top: 30px;">
+                            ${isCorrect ? '✅ CORRECT! The code is working!' : '❌ Something is still wrong'}
+                        </p>
+                        
+                        <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                            Expected: 2,553 total | 2,302 active | 251 inactive
+                        </p>
+                    `;
+                })
+                .catch(error => {
+                    result.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+                });
+        }
+        
+        // Auto-run on page load
+        window.onload = testApple;
+    </script>
+</body>
+</html>
+
